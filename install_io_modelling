@@ -1,0 +1,41 @@
+#!/bin/bash
+
+module purge
+#module load openmpi/gnu/2.0.2
+module load ddn/mvapich/3.1.4
+module list
+
+
+SCRIPT=$(readlink -f $0)
+export SCRIPTPATH=`dirname ${SCRIPT}`
+
+${SCRIPTPATH}/precheck
+
+export NAME="io-modelling"
+export MAJOR="1"
+export MINOR="0"
+export REVISION="0"
+#export VERSION="$MAJOR.$MINOR.$REVISION"
+export VERSION="git"
+
+
+source ${SCRIPTPATH}/config
+
+### CLONE ###
+if [ ! -d "${CACHEDdir}/${SRCdir}" ]
+then  
+	mkdir "${CACHEDIR}/$SRCdir"
+	git clone https://github.com/JulianKunkel/io-modelling "${CACHEDIR}/$SRCdir"
+else
+	echo "Warning: ${FILE} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+cd ${SRCdir}
+echo "prefix: ${PREFIX}"
+set -x
+make
+mkdir -p "$PREFIX/bin"
+mv io-model "$PREFIX/bin"
+set +x

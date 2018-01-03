@@ -1,0 +1,29 @@
+#!/bin/bash
+
+INSTALL_ROOT_DIR="/gsfs/betke/software/install"
+THREAD_NUM=4
+#DATE="$(date +%Y%m%d%H%M)"
+DATE="$(date +%Y%m%d)"
+
+CACHEdir="${SCRIPTPATH}/cache_${NAME}"
+SRCdir="${CACHEdir}/${NAME}-${VERSION}" 		# source directory
+
+BLDdir="${SRCdir}/build" 			# build directory
+PREFIX="${INSTALL_ROOT_DIR}/${NAME}/${VERSION}"		# install directory
+LOG="${CACHEdir}/log"
+
+echo "NAME: ${NAME}"
+echo "VERSION: ${VERSION}"
+echo "DATE: ${DATE}"
+echo "INSTALL_ROOT_DIR: ${INSTALL_ROOT_DIR}"
+echo "cache dir: ${CACHEdir}" 
+echo "source dir: ${SRCdir}"
+echo "build dir: ${BLDdir}"
+echo "install dir: ${PREFIX}"
+
+if [ ! -d "${CACHEdir}" ]
+then
+	mkdir "${CACHEdir}"
+else
+	echo "already exists ${CACHEdir}"
+fi

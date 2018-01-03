@@ -1,0 +1,50 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname ${SCRIPT}`
+${SCRIPTPATH}/precheck
+
+module purge
+#module load betke/openssl/1.0.2d
+module load betke/curl/7.47.1
+module list
+
+### CONFIG
+NAME="cmake"
+MAJOR="3"
+MINOR="6"
+REVISION="2"
+VERSION="$MAJOR.$MINOR.$REVISION"
+
+source ${SCRIPTPATH}/config
+
+FILE="$NAME-$MAJOR.$MINOR.$REVISION.tar.gz"
+
+### FETCH ###
+if [ ! -e "${CACHEdir}/${FILE}" ] 
+then
+	cd ${CACHEdir}
+	wget https://cmake.org/files/v${MAJOR}.${MINOR}/cmake-${VERSION}.tar.gz --no-check-certificate
+else
+	echo "WARNING: ${NAME}-${VERSION} is already downloaded"
+fi
+
+### EXTRACT ###
+cd ${CACHEdir}
+if [ ! -d "${SRCdir}" ]
+then
+	mkdir "${SRCdir}"
+	tar -vzxf "./$FILE"
+else
+	echo "Warning: ${NAME}-${VERSION} is already extracted"
+fi
+
+### COMPILE AND INSTALL ###
+cd ${SRCdir}
+./configure --prefix=$PREFIX 
+#./configure --prefix=$PREFIX --system-curl
+#./configure --prefix=$PREFIX --no-system-curl
+                          
+make -j${THREAD_NUM}
+make install
+

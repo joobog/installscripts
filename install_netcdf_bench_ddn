@@ -1,0 +1,51 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname ${SCRIPT}`
+
+NAME="netcdf-bench"
+VERSION="git"
+source ${SCRIPTPATH}/config
+VERSION="$VERSION-${DATE}"
+source ${SCRIPTPATH}/config
+
+module purge
+module load betke/cmake
+module load ddn/mvapich/3.1.4
+module load betke/hdf5/1.8.20-ddn
+module load betke/netcdf/4.4.1-ddn
+module list
+
+NCDIR="$(readlink -f $(dirname $(which ncdump))/..)"
+
+### FETCH ###
+if [ ! -d "${SRCdir}" ] 
+then
+cd ${CACHEdir}
+git clone https://github.com/joobog/netcdf-bench ${SRCdir} 
+else
+echo "WARNING: ${NAME}-${VERSION} is already downloaded"
+fi
+
+### COMPILE AND INSTALL ###
+
+
+[ ! -d build ] && mkdir build
+cd build
+
+PREFIX="${PREFIX}-ddn"
+#CMAKEARGS="-DCMAKE_C_COMPILER=$(which icc)"
+CMAKEARGS="-DCMAKE_C_COMPILER=$(which gcc)"
+CMAKEARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX $CMAKEARGS"
+CMAKEARGS="-DNETCDF_INCLUDE_DIR=$NCDIR/include $CMAKEARGS"
+CMAKEARGS="-DNETCDF_LIBRARY=$NCDIR/lib/libnetcdf.so $CMAKEARGS"
+#CMAKEARGS="-DCMAKE_BUILD_TYPE=Debug $CMAKEARGS"
+CMAKEARGS="-DCMAKE_BUILD_TYPE=Release $CMAKEARGS"
+
+set -x
+cmake $CMAKEARGS $SRCdir
+set +x
+
+make VERBOSE=1 -j install
+
+#mv "$PREFIX/bin/benchtool" "$PREFIX/bin/benchtool

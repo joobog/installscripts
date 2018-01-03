@@ -1,0 +1,67 @@
+#!/bin/bash
+
+module purge
+#module load gcc
+#module load valgrind
+module load betke/openssl
+#module load intel mxm fca bullxmpi_mlx
+module list
+
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname ${SCRIPT}`
+${SCRIPTPATH}/precheck
+
+### CONFIG
+NAME="Python"
+MAJOR="3"
+MINOR="5"
+REVISION="2"
+VERSION="$MAJOR.$MINOR.$REVISION"
+
+source ${SCRIPTPATH}/config
+
+FILE="$NAME-$MAJOR.$MINOR.$REVISION.tgz"
+
+
+### FETCH ###
+cd ${CACHEdir}
+if [ ! -f "${FILE}" ] 
+then
+	cd ${CACHEdir}
+	wget https://www.python.org/ftp/python/$MAJOR.$MINOR.$REVISION/$FILE
+else
+	echo "WARNING: ${FILE} is already downloaded"
+fi
+
+
+### EXTRACT ###
+if [ ! -d "${SRCdir}" ]
+then
+	mkdir "${SRCdir}"
+	tar -vzxf "./$FILE"
+else
+	echo "Warning: ${FILE} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+set -x 
+SSLDIR="$(readlink -f $(dirname $(which openssl))/..)"
+cd ${SRCdir}
+make clean
+export CC="$(which gcc)"
+export CXX="$(which g++)"
+export LDFLAGS="-L$SSLDIR/lib"
+export CPPFLAGS="-I$SSLDIR/include"
+export CFLAGS="-I$SSLDIR/include"
+#export CPPFLAGS="-ggdb -O0"
+#export CFLAGS="-ggdb -O0"
+#./configure --prefix=$PREFIX --with-pydebug --with-valgrind
+./configure \
+--prefix=$PREFIX \
+--with-ensurepip=install
+#--with-valgrind \
+
+make -j${THREAD_NUM}
+make install
+set +x

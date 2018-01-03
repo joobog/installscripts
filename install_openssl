@@ -1,0 +1,43 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname ${SCRIPT}`
+${SCRIPTPATH}/precheck
+
+### CONFIG
+NAME="openssl"
+MAJOR="1"
+MINOR="0"
+REVISION="2f"
+VERSION="$MAJOR.$MINOR.$REVISION"
+
+source ${SCRIPTPATH}/config
+
+FILE="$NAME-$MAJOR.$MINOR.$REVISION.tar.gz"
+
+### FETCH ###
+if [ ! -e "${CACHEdir}/${FILE}" ] 
+then
+	wget -O "${CACHEdir}/${FILE}" https://www.openssl.org/source/openssl-1.0.2f.tar.gz --no-check-certificate
+else
+	echo "WARNING: ${NAME}-${VERSION} is already downloaded"
+fi
+
+#SRCdir="$CACHEdir/$NAME-c-$VERSION"
+
+### EXTRACT ###
+if [ ! -d "${SRCdir}" ]
+then
+	mkdir "${SRCdir}"
+	cd "${CACHEdir}"
+	tar -vzxf "./$FILE"
+else
+	echo "Warning: ${NAME}-${VERSION} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+cd ${SRCdir}
+./config shared --prefix=$PREFIX 
+make -j${THREAD_NUM}
+make install

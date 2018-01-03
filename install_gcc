@@ -1,0 +1,62 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+export SCRIPTPATH=`dirname ${SCRIPT}`
+
+${SCRIPTPATH}/precheck
+
+export NAME="gcc"
+export MAJOR="7"
+export MINOR="2"
+export REVISION="0"
+export VERSION="$MAJOR.$MINOR.$REVISION"
+
+
+module purge
+module load openmpi/gnu/2.0.2
+module list 
+
+
+source ${SCRIPTPATH}/config
+
+
+### FETCH ###
+FILE="$NAME-$VERSION.tar.xz"
+
+if [ ! -e "${CACHEdir}/${FILE}" ] 
+then
+	wget -O ${CACHEdir}/${FILE} http://www.netgull.com/gcc/releases/gcc-${VERSION}/$FILE
+else
+	echo "WARNING: ${FILE} is already downloaded"
+fi
+
+
+### EXTRACT ###
+if [ ! -d "${CACHEDdir}/${SRCdir}" ]
+then 
+	tar -C ${CACHEdir} -xvf "${CACHEdir}/${FILE}"
+else
+	echo "Warning: ${FILE} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+
+cd ${SRCdir}
+# download the prerequisites
+./contrib/download_prerequisites
+
+# create the build directory
+mkdir gcc-build
+cd gcc-build
+
+# build
+../configure                      \
+    --prefix=${PREFIX}                           \
+    --enable-shared                                  \
+    --enable-threads=posix                           \
+    --enable-__cxa_atexit                            \
+    --enable-clocale=gnu                             \
+    --enable-languages=all                          \
+&& make -j${THREAD_NUM} \
+&& make install

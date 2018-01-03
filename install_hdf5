@@ -1,0 +1,67 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+export SCRIPTPATH=`dirname ${SCRIPT}`
+
+${SCRIPTPATH}/precheck
+
+export NAME="hdf5"
+export MAJOR="1"
+export MINOR="8"
+export REVISION="20"
+export VERSION="$MAJOR.$MINOR.$REVISION"
+
+
+module purge
+module load openmpi/gnu/2.0.2
+module list 
+
+
+source ${SCRIPTPATH}/config
+
+
+### FETCH ###
+FILE="$NAME-$VERSION.tar.bz2"
+
+if [ ! -e "${CACHEdir}/${FILE}" ] 
+then
+				#https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.20.tar.bz2
+	wget -O ${CACHEdir}/${FILE} http://www.hdfgroup.org/ftp/HDF5/current${MAJOR}${MINOR}/src/$FILE
+	#wget -O "${CACHEdir}/${FILE}" http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-$MAJOR.$MINOR/hdf5-$VERSION/src/$FILE
+else
+	echo "WARNING: ${FILE} is already downloaded"
+fi
+
+
+### EXTRACT ###
+if [ ! -d "${CACHEDdir}/${SRCdir}" ]
+then 
+	tar -C ${CACHEdir} -xjvf "${CACHEdir}/${FILE}"
+else
+	echo "Warning: ${FILE} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+cd ${SRCdir}
+make clean
+./configure --prefix="${PREFIX}" \
+	--enable-fortran  \
+	--enable-production \
+	--enable-hl \
+	--enable-shared \
+	--enable-static \
+	--enable-parallel \
+	CC="mpicc" \
+	FC="mpif90" \
+	F77="mpi77" \
+	CXX="mpic++"
+
+	#--enable-fortran \
+	#--enable-fortran2003 \
+	#CFLAGS="-g3 -O0" \
+	#CXXFLAGS="-g3 -O0"
+	#--enable-debug=all \
+		
+make -j${THREAD_NUM}
+make install

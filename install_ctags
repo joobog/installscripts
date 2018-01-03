@@ -1,0 +1,54 @@
+#!/bin/bash
+
+SCRIPT=$(readlink -f $0)
+export SCRIPTPATH=`dirname ${SCRIPT}`
+
+${SCRIPTPATH}/precheck
+
+export NAME="ctags"
+export MAJOR="5"
+export MINOR="8"
+export REVISION="1"
+export VERSION="$MAJOR.$MINOR.$REVISION"
+
+
+source ${SCRIPTPATH}/config
+
+
+### FETCH ###
+FILE="$NAME-$MAJOR.$MINOR.tar.gz"
+
+if [ ! -e "${CACHEdir}/${FILE}" ] 
+then
+	wget -O "${CACHEdir}/${FILE}" http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz
+else
+	echo "WARNING: ${FILE} is already downloaded"
+fi
+
+
+SRCdir="$CACHEdir/${NAME}-$MAJOR.$MINOR"
+
+### EXTRACT ###
+if [ ! -d "${CACHEDdir}/${SRCdir}" ]
+then 
+	tar -C ${CACHEdir} -xzvf "${CACHEdir}/${FILE}"
+else
+	echo "Warning: ${FILE} is already extracted"
+fi
+
+
+### COMPILE AND INSTALL ###
+cd ${SRCdir}
+make clean
+make purge 
+./configure --prefix="${PREFIX}"
+
+ #--with-python-config-dir=/scratch/pool/CIS/m215026/install/python2/lib/pkgconfig --with-python3-config-dir=/scratch/pool/CIS/m215026/install/python3/lib/pkgconfig
+make -j${THREAD_NUM}
+#make check 
+make install
+
+
+### LINK ###
+#source ${SCRIPTPATH}/link
+
