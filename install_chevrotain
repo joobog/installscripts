@@ -1,0 +1,50 @@
+#!/bin/bash
+
+export NAME="cherotain"
+export VERSION="0.0.1"
+source ./config
+
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" "xios" "esmf/7.0.2" "psyclone/1.4.1" )
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" "xios" "esmf/7.0.2"  )
+
+fetch_local "/home/dkrz/k202107/software/downloads/chevrotain.tgz"
+
+function build_script {
+  set -x
+	cd chevrotain
+	module_load "${deps[@]}"
+	#mkdir -p build && cd build
+
+	#svn export --username <your_SRS_username> https://code.metoffice.gov.uk/svn/lfric/LFRic/tags/chevrotain
+	#(supply password when prompted)
+
+	exists ESMF_Info
+	ESMFDIR="$(readlink -f $(dirname $(which ESMF_Info))/../../..)"
+
+	export FC=gfortran
+	export FPP=cpp
+	export LDMPI=mpif90
+	BUILD_DIR="/home/dkrz/k202107/software/cache/xios/svn-20180110"
+
+	export FFLAGS="-I$BUILD_DIR/inc -I$ESMFDIR/mod/modO/Linux.gfortran.64.mpich2.default -I$INSTALL_DIR/include"
+	export LDFLAGS="-L$BUILD_DIR/lib -L$ESMFDIR/lib/libO/Linux.gfortran.64.mpich2.default -L$INSTALL_DIR/lib"
+	export CPPFLAGS="-I$ESMFDIR/mod/modO/Linux.gfortran.64.mpich2.default -I$INSTALL_DIR/include"
+	export LD_LIBRARY_PATH="$INSTALL_DIR/lib:$INSTALL_DIR/lib64:$ESMFDIR/lib/libO/Linux.gfortran.64.mpich2.default"
+
+	sed -i "s/export EXTERNAL_STATIC_LIBRARIES += xios.*/export EXTERNAL_STATIC_LIBRARIES += xios stdc++ netcdf_c++ netcdff netcdf esmf/" Makefile
+
+	cd gungho
+	make build
+	#cd example
+
+
+	#../bin/gungho gungho_configuration.nml
+	set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths
+add_prepend_path "$MFILE" "C_INCLUDE_PATH" "include/fuse3"

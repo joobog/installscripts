@@ -1,67 +1,36 @@
 #!/bin/bash
 
-module purge
-#module load gcc
-#module load valgrind
-module load betke/openssl
-#module load intel mxm fca bullxmpi_mlx
-module list
+export NAME="python"
+export VERSION="3.6.4"
+source ./config
 
-SCRIPT=$(readlink -f $0)
-SCRIPTPATH=`dirname ${SCRIPT}`
-${SCRIPTPATH}/precheck
+fetch_http "https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz"
 
-### CONFIG
-NAME="Python"
-MAJOR="3"
-MINOR="5"
-REVISION="2"
-VERSION="$MAJOR.$MINOR.$REVISION"
+declare -a deps=( )
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
 
-source ${SCRIPTPATH}/config
+function build_script {
+	SSLDIR="$(readlink -f $(dirname $(which openssl))/..)"
+	cd Python-3.6.4 
+	export CC="$(which gcc)"
+	export CXX="$(which g++)"
+	export LDFLAGS="-L$SSLDIR/lib"
+	export CPPFLAGS="-I$SSLDIR/include"
+	export CFLAGS="-I$SSLDIR/include"
+	#export CPPFLAGS="-ggdb -O0"
+	#export CFLAGS="-ggdb -O0"
+	#./configure --prefix=$PREFIX --with-pydebug --with-valgrind
+	./configure \
+		--prefix=$PREFIX \
+		--with-ensurepip=install
+	#--with-valgrind \
 
-FILE="$NAME-$MAJOR.$MINOR.$REVISION.tgz"
+	make -j${THREAD_NUM}
+	make install
+}
 
+build_with build_script
 
-### FETCH ###
-cd ${CACHEdir}
-if [ ! -f "${FILE}" ] 
-then
-	cd ${CACHEdir}
-	wget https://www.python.org/ftp/python/$MAJOR.$MINOR.$REVISION/$FILE
-else
-	echo "WARNING: ${FILE} is already downloaded"
-fi
-
-
-### EXTRACT ###
-if [ ! -d "${SRCdir}" ]
-then
-	mkdir "${SRCdir}"
-	tar -vzxf "./$FILE"
-else
-	echo "Warning: ${FILE} is already extracted"
-fi
-
-
-### COMPILE AND INSTALL ###
-set -x 
-SSLDIR="$(readlink -f $(dirname $(which openssl))/..)"
-cd ${SRCdir}
-make clean
-export CC="$(which gcc)"
-export CXX="$(which g++)"
-export LDFLAGS="-L$SSLDIR/lib"
-export CPPFLAGS="-I$SSLDIR/include"
-export CFLAGS="-I$SSLDIR/include"
-#export CPPFLAGS="-ggdb -O0"
-#export CFLAGS="-ggdb -O0"
-#./configure --prefix=$PREFIX --with-pydebug --with-valgrind
-./configure \
---prefix=$PREFIX \
---with-ensurepip=install
-#--with-valgrind \
-
-make -j${THREAD_NUM}
-make install
-set +x
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+export NAME="mpich"
+export VERSION="3.2"
+source ./config
+
+fetch_http "http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz"
+
+function build_script {
+
+	cd mpich-3.2
+	./configure \
+		--prefix=$PREFIX \
+		--enable-fortran=all \
+		--enable-cxx \
+		--enable-threads=multiple \
+		--enable-shared \
+		--enable-romio || die "Couldn't configure"
+	make -j $THREAD_NUM || die "Couldn't make"
+	make install  -j $THREAD_NUM || die "Couldn't install"
+}
+
+build_with build_script
+
+module_init
+auto_module_paths

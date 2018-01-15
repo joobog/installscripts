@@ -1,69 +1,43 @@
 #!/bin/bash
 
-module purge
-#module load betke/openssl/1.0.2f
-#module load betke/curl/4.47.1
-#module load openmpi/gnu/2.0.2
-module load betke/hdf5/1.8.20
-module list
+export NAME="netcdf"
+export VERSION="4.5.0"
+source ./config
 
-SCRIPT=$(readlink -f $0)
-SCRIPTPATH=`dirname ${SCRIPT}`
-${SCRIPTPATH}/precheck
+fetch_http "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VERSION.tar.gz"
 
-### CONFIG
-NAME="netcdf"
-MAJOR="4"
-MINOR="4"
-REVISION="1"
-VERSION="$MAJOR.$MINOR.$REVISION"
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
 
-source ${SCRIPTPATH}/config
+function build_script {
+	set -x
+ cd netcdf-$VERSION
+ module_load "${deps[@]}"
 
-FILE="v$MAJOR.$MINOR.$REVISION.tar.gz"
-H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
+ exists h5dump
+ CC=$(which mpicc) 
+ CXX=$(which mpicxx)
+ FF=$(which mpif90)
+ FC=$(which mpif90)
 
-### FETCH ###
-cd ${CACHEdir}
-if [ ! -e "${FILE}" ] 
-then
- wget "https://github.com/Unidata/netcdf-c/archive/$FILE"
-else
- echo "WARNING: ${NAME}-${VERSION} is already downloaded"
-fi
-
-SRCdir="${CACHEdir}/${NAME}-c-$VERSION"
-
-### EXTRACT ###
-if [ ! -d "${SRCdir}" ]
-then
- mkdir "${SRCdir}"
- tar -vzxf "./$FILE"
-else
- echo "Warning: ${NAME}-${VERSION} is already extracted"
-fi
-
-
-### COMPILE AND INSTALL ###
-cd ${SRCdir}
-make clean
-export CC="mpicc"
-export LDFLAGS="-L${H5DIR}/lib -Wl,--rpath=${H5DIR}/lib"
-#export CPPFLAGS="-g -I${H5DIR}/include"
-#export CFLAGS="-g -I${H5DIR}/include"
-export CPPFLAGS="-I${H5DIR}/include"
-export CFLAGS="-I${H5DIR}/include"
+ H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
+ #export LDFLAGS="-L${H5DIR}/lib -Wl,--rpath=${H5DIR}/lib"
+ export LDFLAGS="-L${H5DIR}/lib"
+ export CPPFLAGS="-I${H5DIR}/include"
+ export CFLAGS="-I${H5DIR}/include"
 
 ./configure \
- --enable-remote-fortran-bootstrap \
  --prefix=${PREFIX} \
  --enable-shared \
- --enable-static \
- --enable-parallel-tests \
- --enable-large-file-tests \
- --with-temp-large="$HOME/tmp" \
- --enable-pnetcdf 
+ --enable-static || die "Couldn't configure"
 
-make -j${THREAD_NUM}
-make install
 
+ make -j $THREAD_NUM || die "Couldn't make"
+ make install  -j $THREAD_NUM || die "Couldn't install"
+ set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

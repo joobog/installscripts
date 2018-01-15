@@ -1,0 +1,30 @@
+#!/bin/bash
+
+export NAME="iofs"
+export VERSION="git"
+source ./config
+
+fetch_git "https://github.com/joobog/iofs"
+
+function build_script {
+	module load $USER/fuse3
+
+	[ ! -d build ] && mkdir build
+	cd build
+
+	export CFLAGS="$(pkg-config --cflags fuse3)"
+	export LDFLAGS="$(pkg-config --libs fuse3)"
+
+	CMAKEARGS+="-DCMAKE_C_COMPILER=$(which mpicc) "
+	CMAKEARGS+="-DCMAKE_INSTALL_PREFIX=$PREFIX $CMAKEARGS "
+	CMAKEARGS+="-DCMAKE_BUILD_TYPE=Debug $CMAKEARGS "
+	#CMAKEARGS="-DCMAKE_BUILD_TYPE=Release $CMAKEARGS"
+
+	cmake $CMAKEARGS .. || die "Couldn't configure"
+	make VERBOSE=1 -j install || die "Couldn't make"
+}
+
+build_with build_script
+
+module_init
+auto_module_paths

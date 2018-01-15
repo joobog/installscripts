@@ -1,0 +1,32 @@
+#!/bin/bash
+
+export NAME="netcdf_cxx"
+export VERSION="4.2"
+source ./config
+
+fetch_http "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-cxx-4.2.tar.gz"
+
+declare -a deps=( "hdf5/1.8.20" "mpich/3.2" "netcdf/4.5.0" )
+
+function build_script {
+	set -x
+ cd netcdf-cxx-$VERSION
+ module_load "${deps[@]}"
+
+ CC=$(which mpicc) 
+ CXX=$(mpicxx)
+ FF=$(which mpif90)
+ FC=$(which mpif90)
+
+ ./configure --prefix=$PREFIX
+
+ make -j $THREAD_NUM || die "Couldn't make"
+ make install  -j $THREAD_NUM || die "Couldn't install"
+ set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

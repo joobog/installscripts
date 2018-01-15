@@ -1,0 +1,50 @@
+#!/bin/bash
+
+export NAME="esmf"
+export VERSION="7.0.2"
+source ./config
+
+fetch_http "http://www.earthsystemmodeling.org/esmf_releases/non_public/ESMF_7_0_2/esmf_7_0_2_src.tar.gz"
+
+#declare -a deps=( )
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
+
+function build_script {
+	set -x
+	cd esmf
+	module_load "${deps[@]}"
+
+	exists ncdump
+	exists h5dump
+	exists nf-config
+  H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
+  MPIDIR="$(readlink -f $(dirname $(which mpicc))/..)"
+  NFDIR="$(readlink -f $(dirname $(which nf-config))/..)"
+	NCDIR="$(readlink -f $(dirname $(which ncdump))/..)"
+
+	FFLAGS="-I${H5DIR}/include/ -I${NFDIR}/include -I${MPIDIR}/include"
+
+	export ESMF_DIR=$PWD/
+	export ESMF_INSTALL_PREFIX=$PREFIX
+	export ESMF_COMM=mpich2
+	export ESMF_COMPILER=gfortran
+	export ESMF_NETCDF=split
+	export ESMF_CXXLINKLIBS=-lmpichf90
+	export ESMF_NETCDF_INCLUDE="${NFDIR}/include -I${NCDIR}/include" # cheating !!!
+	export ESMF_NETCDF_LIBPATH="${NFDIR}/lib -L${NCDIR}/lib -Wl,-rpath,${NCDIR}/lib" # cheating !!!
+
+	#cp -a ${SRC_DIR}/esmf . # Does not support out of tree builds ...
+	#pushd esmf
+
+	make -j $THREAD_NUM || die "Couldn't make"
+	#make check  || die "Couldn't check"
+	make install  -j $THREAD_NUM || die "Couldn't install"
+
+	set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

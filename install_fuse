@@ -1,0 +1,24 @@
+#!/bin/bash
+
+export NAME="fuse3"
+export VERSION="git"
+source ./config
+
+fetch_git "https://github.com/libfuse/libfuse.git"
+
+function build_script {
+	[ ! -d build ] && mkdir build
+	cd build
+	sed -i "s/'example',\ //g" ../meson.build
+	sed -i "s/^meson.add_install_script/#meson.add_install_script/g" ../util/meson.build
+	sed -i "s/^\s*get_option/\ #get_option/g" ../util/meson.build
+	meson --prefix=$PREFIX -Ddisable-mtab=true  -D udevrulesdir="$PREFIX/rules.d" ..
+	ninja || die "Couln't configure"
+	ninja install || die "Couln't install"
+}
+
+build_with build_script
+
+module_init
+auto_module_paths
+add_prepend_path "$MFILE" "C_INCLUDE_PATH" "include/fuse3"
