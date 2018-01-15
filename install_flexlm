@@ -1,0 +1,19 @@
+#!/bin/bash
+
+export NAME="flexlm"
+export VERSION="8.4"
+source ./config
+
+fetch_http "http://download.autodesk.com/us/support/files/network_license_manager/11_13_1_2_v2/Linux/nlm11.13.1.2_ipv4_ipv6_linux64.tar.gz"
+
+function build_script {
+	cd $SRCdir
+	rpm2cpio ./nlm11.13.1.2_ipv4_ipv6_linux64.rpm| cpio -idmv
+	mkdir -p $PREFIX/bin
+	cp -r opt/flexnetserver/* $PREFIX/bin
+}
+
+build_with build_script
+
+module_init
+auto_module_paths
