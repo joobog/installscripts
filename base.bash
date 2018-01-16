@@ -15,7 +15,13 @@ function exists {
 function extract {
 	local l_fn="$1"
 	pushd $PWD
-	tar -xf "$l_fn" || die "Couldn't extract $l_fn"
+	l_fn=$(basename "$l_fn")
+	extension="${l_fn##*.}"
+	if [ "zip" == $extension ]; then
+		unzip $l_fn
+	else
+		tar -xf "$l_fn" || die "Couldn't extract $l_fn"
+	fi
 	popd 
 }
 
