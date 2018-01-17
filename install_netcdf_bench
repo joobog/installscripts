@@ -1,0 +1,37 @@
+#!/bin/bash
+
+export NAME="netcdf-bench"
+export VERSION="git"
+source ./config
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+
+fetch_git "https://github.com/joobog/netcdf-bench"
+
+function build_script {
+	[ ! -d build ] && mkdir build
+	cd build
+	module_load "${deps[@]}"
+
+	exists ncdump
+	NCDIR="$(readlink -f $(dirname $(which ncdump))/..)"
+
+	#CMAKEARGS="-DCMAKE_C_COMPILER=$(which icc)"
+	CMAKEARGS="-DCMAKE_C_COMPILER=$(which gcc)"
+	CMAKEARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX $CMAKEARGS"
+	CMAKEARGS="-DNETCDF_INCLUDE_DIR=$NCDIR/include $CMAKEARGS"
+	CMAKEARGS="-DNETCDF_LIBRARY=$NCDIR/lib/libnetcdf.so $CMAKEARGS"
+	#CMAKEARGS="-DCMAKE_BUILD_TYPE=Debug $CMAKEARGS"
+	CMAKEARGS="-DCMAKE_BUILD_TYPE=Release $CMAKEARGS"
+
+	set -x
+	cmake $CMAKEARGS $SRCdir || die "Couldn't configure"
+	set +x
+
+	make VERBOSE=1 -j install || die "Couldn't make"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

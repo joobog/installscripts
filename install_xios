@@ -10,7 +10,6 @@ declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4
 
 function build_script {
 	set -x
-	cd svn
 	module_load "${deps[@]}"
 
 	exists ncdump
@@ -35,6 +34,9 @@ function build_script {
   pushd inputs
   mpiexec -n $THREAD_NUM ../bin/test_client.exe || die "Test failed" # test that everything works
   popd
+
+	mkdir -p $PREFIX
+	mv $SRCdir/* $PREFIX
 
 	set +x
 }

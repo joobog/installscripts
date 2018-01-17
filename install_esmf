@@ -48,3 +48,4 @@ build_with build_script
 module_init
 module_deps "${deps[@]}"
 auto_module_paths
+add_prepend_path "$MFILE" "LD_LIBRARY_PATH" "lib/libO/Linux.gfortran.64.mpich2.default"
