@@ -20,7 +20,7 @@ function build_script {
 	ESMFDIR="$(readlink -f $(dirname $(which ESMF_Info))/../../..)"
 
 	export FC=gfortran
-	export FPP=cpp
+	export FPP="cpp -traditional-cpp"
 	export LDMPI=mpif90
 	#BUILD_DIR="/home/dkrz/k202107/software/cache/xios/svn-20180117"
 	exists xios_server.exe
@@ -35,12 +35,14 @@ function build_script {
 	export CPPFLAGS="-I$ESMFDIR/mod/modO/Linux.gfortran.64.mpich2.default $ADD_INC"
 	export LD_LIBRARY_PATH="$ESMFDIR/lib/libO/Linux.gfortran.64.mpich2.default:$LD_LIBRARY_PATH"
 
-	sed -i "s/.*trim.*)\s*$/&, \&/" gungho/working/gungho/algorithm/solver_mod.x90
 	sed -i "s/export EXTERNAL_STATIC_LIBRARIES = xios.*/export EXTERNAL_STATIC_LIBRARIES = xios stdc++ netcdff netcdf esmf/" gungho/Makefile
 
 	cd gungho
 	make VERBOSE=1 build  || die "Couldn't build"
 	#cd example
+
+	mkdir -p $PREFIX
+	cp -r bin $PREFIX
 
 	echo "You may want to run:"
 	echo "../../bin/gungho gungho_configuration.nml"

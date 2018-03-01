@@ -67,7 +67,6 @@ function fetch_http {
 	else
 		echo "INFO: ${NAME}-${VERSION} is already downloaded"
 	fi
-
 	extract "${l_fn}"
 	popd > /dev/null
 }

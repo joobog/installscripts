@@ -3,11 +3,13 @@
 export NAME="iofs"
 export VERSION="git"
 source ./config
+#declare -a deps=( "python/3.6.4" "fuse3" )
+declare -a deps=( "python/3.6.4" )
 
 fetch_git "https://github.com/joobog/iofs"
 
 function build_script {
-	module load $USER/fuse3
+	module_load "${deps[@]}"
 
 	[ ! -d build ] && mkdir build
 	cd build
@@ -15,7 +17,8 @@ function build_script {
 	export CFLAGS="$(pkg-config --cflags fuse3)"
 	export LDFLAGS="$(pkg-config --libs fuse3)"
 
-	CMAKEARGS+="-DCMAKE_C_COMPILER=$(which mpicc) "
+	#CMAKEARGS+="-DCMAKE_C_COMPILER=$(which mpicc) "
+	CMAKEARGS+="-DCMAKE_C_COMPILER=$(which gcc) "
 	CMAKEARGS+="-DCMAKE_INSTALL_PREFIX=$PREFIX $CMAKEARGS "
 	CMAKEARGS+="-DCMAKE_BUILD_TYPE=Debug $CMAKEARGS "
 	#CMAKEARGS="-DCMAKE_BUILD_TYPE=Release $CMAKEARGS"
@@ -27,4 +30,5 @@ function build_script {
 build_with build_script
 
 module_init
+module_deps "${deps[@]}"
 auto_module_paths
