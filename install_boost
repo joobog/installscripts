@@ -1,0 +1,56 @@
+#!/bin/bash
+
+export NAME="boost"
+export VERSION="1.66"
+source ./config
+
+#declare -a deps=( "python/3.6.4" )
+declare -a deps=( )
+
+fetch_http "https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2"
+
+function build_script {
+module_load "${deps[@]}"
+cd boost_1_66_0
+./bootstrap.sh  --prefix=$PREFIX || die "bootstrap failed"
+./b2 -j${THREAD_NUM} || die "build failed"
+./b2 -j${THREAD_NUM} --build-type=complete \
+	--with-atomic \
+	--with-chrono \
+	--with-container \
+	--with-context \
+	--with-coroutine \
+	--with-date_time \
+	--with-exception \
+	--with-filesystem \
+	--with-graph \
+	--with-graph_parallel \
+	--with-iostreams \
+	--with-locale \
+	--with-log \
+	--with-math \
+	--with-mpi \
+	--with-program_options \
+	--with-python \
+	--with-random \
+	--with-regex \
+	--with-serialization \
+	--with-signals \
+	--with-system \
+	--with-test \
+	--with-thread \
+	--with-timer \
+	--with-type_erasure \
+	--with-wave \
+	--layout=tagged  \
+	--prefix=${PREFIX} install || "install failed"
+
+	#--with-coroutine2 \
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths
+add_prepend_path "$MFILE" "BOOST_ROOT" "/"
