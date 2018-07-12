@@ -18,7 +18,6 @@ function build_script {
  
 	${SRCdir}/configure \
 		--prefix=${PREFIX} \
-		--reconfigure \
 		--with-cc=$(which gcc) \
 		--minimal || die "configure failed"
 		#--with-libs3="/mnt/lustre01/pf/k/k202107/software/install/libs3/git-20180711" || die "configure failed"
