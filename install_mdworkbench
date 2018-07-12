@@ -1,0 +1,39 @@
+#!/bin/bash
+
+export NAME="workbench"
+export VERSION="git"
+source ./config
+declare -a deps=("mpich/3.2"   "pcre/8.41" "glib/2.55.2" )
+
+
+fetch_git "https://github.com/JulianKunkel/md-workbench.git"
+
+function build_script {
+	module_load "${deps[@]}"
+	#[ ! -d build ] && mkdir build
+	#cd build
+
+	set -x
+	GLIBDIR="$(readlink -f $(dirname $(which gio))/..)"
+ 
+	${SRCdir}/configure \
+		--prefix=${PREFIX} \
+		--reconfigure \
+		--with-cc=$(which gcc) \
+		--minimal || die "configure failed"
+		#--with-libs3="/mnt/lustre01/pf/k/k202107/software/install/libs3/git-20180711" || die "configure failed"
+
+	set +x
+ #cd "${SRCdir}"
+	cd build
+ #make || die "build failed"
+	make VERBOSE=1 install || "install failed"
+
+ set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

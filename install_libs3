@@ -1,0 +1,49 @@
+#!/bin/bash
+
+export NAME="libs3"
+export VERSION="git"
+source ./config
+declare -a deps=()
+
+
+fetch_git "https://github.com/bji/libs3"
+
+function build_script {
+	module_load "${deps[@]}"
+	[ ! -d build ] && mkdir build
+	cd build
+
+	set -x
+
+	#git reset --hard 11a4e976c28ba525e7d61fbc3867c345a2af1519
+
+	set +x
+	cd "${SRCdir}"
+	make DESTDIR=$PREFIX install || "install failed"
+	mkdir -p $PREFIX/lib/pkgconfig
+
+	PKGFILE="$PREFIX/lib/pkgconfig/libs3.pc"
+	echo "prefix=$PREFIX" > $PKGFILE
+
+	echo '''
+	libdir=${prefix}/lib 
+	includedir=${prefix}/include
+
+	Name: libs3
+	Description: S3
+	Version: 2.0
+	Cflags: -I${prefix}/include
+	Libs: -Wl,-rpath=${libdir} -l${libdir}/libs3.so
+	''' >> $PKGFILE
+
+	set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths
+
+
+
