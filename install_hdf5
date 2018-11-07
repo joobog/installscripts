@@ -4,9 +4,8 @@ export NAME="hdf5"
 export VERSION="1.10.4"
 source ./config
 
-$fetch_http "https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-$VERSION.tar.gz"
 fetch_http "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-$VERSION/src/hdf5-$VERSION.tar.gz"
-#declare -a deps=( "mpich/3.2" )
+
 declare -a deps=( "" )
 
 function build_script {
@@ -21,7 +20,7 @@ function build_script {
 	--enable-fortran \
 	--enable-shared \
 	--enable-static \
-	--enable-parallel \ #not compatible with enable-cxx option
+	--enable-parallel \
     CC="$(which mpicc)" \
     FC="$(which mpif90)" \
     F77="$(which mpi77)" \

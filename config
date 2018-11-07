@@ -2,15 +2,12 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname ${SCRIPT}`
 
-<<<<<<< HEAD
 INSTALL_ROOT_DIR="/esfs/jtacquaviva/software/install"
 THREAD_NUM=4
 #DATE="$(date +%Y%m%d%H%M)"
 DATE="$(date +%Y%m%d)"
-=======
 . ./system.config
 . ./base.bash
->>>>>>> 63d2b3df26a80eea7ded168301f7977b0656ad40
 
 [ ! -z ${NAME+x} ] || die "Variable NAME not defined"
 [ ! -z ${VERSION+x} ] || die "Variable VERSION not defined"
