@@ -1,29 +1,34 @@
 #!/bin/bash
 
 export NAME="hdf5"
-export VERSION="1.8.20"
+export VERSION="1.10.4"
 source ./config
 
-fetch_http "https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-$VERSION.tar.gz"
-
-declare -a deps=( "mpich/3.2" )
+$fetch_http "https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-$VERSION.tar.gz"
+fetch_http "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-$VERSION/src/hdf5-$VERSION.tar.gz"
+#declare -a deps=( "mpich/3.2" )
+declare -a deps=( "" )
 
 function build_script {
  cd hdf5-$VERSION
  module_load "${deps[@]}"
 
+ set -x
+ make clean
 ./configure --prefix="${PREFIX}" \
 	--enable-hl \
-	--enable-production \
+	--enable-build-mode=production \
 	--enable-fortran \
-	--enable-fortran2003 \
 	--enable-shared \
 	--enable-static \
-	--enable-parallel \
-	CC="mpicc" \
-	FC="mpif90" \
-	F77="mpi77" \
-	CXX="mpic++" || die "Couldn't configure"
+	--enable-parallel \ #not compatible with enable-cxx option
+    CC="$(which mpicc)" \
+    FC="$(which mpif90)" \
+    F77="$(which mpi77)" \
+    CXX="$(which mpic++)" || die "Couldn't configure"
+set +x
+
+	#--enable-cxx \
 
  make -j $THREAD_NUM || die "Couldn't make"
  make install  -j $THREAD_NUM || die "Couldn't install"

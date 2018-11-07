@@ -3,8 +3,8 @@
 export NAME="workbench"
 export VERSION="git"
 source ./config
-declare -a deps=("mpich/3.2"   "pcre/8.41" "glib/2.55.2" )
-
+#declare -a deps=("mpich/3.2"   "pcre/8.41" "glib/2.55.2" )
+declare -a deps=( )
 
 fetch_git "https://github.com/JulianKunkel/md-workbench.git"
 
@@ -18,10 +18,12 @@ function build_script {
  
 	${SRCdir}/configure \
 		--prefix=${PREFIX} \
-		--with-cc=$(which gcc) \
-		--minimal || die "configure failed"
+		--debug \
+		--with-cc=$(which gcc) || die "configure failed"
+		#--minimal || die "configure failed"
 		#--with-libs3="/mnt/lustre01/pf/k/k202107/software/install/libs3/git-20180711" || die "configure failed"
 
+		#--with-mpi="$(readlink -f $(dirname $(which mpiexec))/..)" \
 	set +x
  #cd "${SRCdir}"
 	cd build

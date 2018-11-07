@@ -3,7 +3,8 @@
 export NAME="netcdf-bench"
 export VERSION="git"
 source ./config
-declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+declare -a deps=( "" )
 
 fetch_git "https://github.com/joobog/netcdf-bench"
 
