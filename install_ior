@@ -25,7 +25,8 @@ source ${SCRIPTPATH}/config
 if [ ! -d "${CACHEDdir}/${SRCdir}" ]
 then  
 	mkdir "${CACHEDIR}/$SRCdir"
-	git clone https://github.com/LLNL/ior.git "${CACHEDIR}/$SRCdir"
+    git clone https://github.com/hpc/ior.git "${CACHEDIR}/$SRCdir"
+	#git clone https://github.com/LLNL/ior.git "${CACHEDIR}/$SRCdir"
 	#git clone git@github.com:IOR-LANL/ior.git "${CACHEDIR}/$SRCdir"
 else
 	echo "Warning: ${FILE} is already extracted"

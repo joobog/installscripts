@@ -24,8 +24,7 @@ source ${SCRIPTPATH}/config
 if [ ! -d "${CACHEDdir}/${SRCdir}" ]
 then  
 	mkdir "${CACHEDIR}/$SRCdir"
-	git clone https://github.com/LLNL/ior.git "${CACHEDIR}/$SRCdir"
-	#git clone git@github.com:IOR-LANL/ior.git "${CACHEDIR}/$SRCdir"
+    git clone https://github.com/hpc/ior.git "${CACHEDIR}/$SRCdir"
 else
 	echo "Warning: ${FILE} is already extracted"
 fi
@@ -39,12 +38,14 @@ PREFIX="${PREFIX}-ddn"
 H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
 MPIDIR="$(readlink -f $(dirname $(which mpiexec))/..)"
 set -x
+export C_INCLUDE_PATH="$C_INCLUDE_PATH:/usr/include"
 export LDFLAGS="-Wl,-rpath=${MPIDIR}/lib -L$MPIDIR}/lib -L${H5DIR}/lib -lgpfs" \
-export CFLAGS="-I$MPIDIR}/include -I${H5DIR}/include" \
+export CFLAGS="-I$MPIDIR}/include -I${H5DIR}/include -I/usr/include" \
 echo ${SRCdir}
+make clean
 ./configure \
 	--prefix="${PREFIX}" \
-	--with-hdf5 \
+    --with-ime \
 	--with-lustre \
 	--with-mpiio \
 	--with-posix
