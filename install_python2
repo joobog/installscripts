@@ -1,17 +1,17 @@
 #!/bin/bash
 
 export NAME="python"
-export VERSION="3.6.4"
+export VERSION="2.7.14"
 source ./config
 
-fetch_http "https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz"
+fetch_http "https://www.python.org/ftp/python/2.7.14/Python-2.7.14.tgz"
 
 declare -a deps=( )
 #declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
 
 function build_script {
 	SSLDIR="$(readlink -f $(dirname $(which openssl))/..)"
-	cd Python-3.6.4 
+	cd Python-2.7.14
 	export CC="$(which gcc)"
 	export CXX="$(which g++)"
 	export LDFLAGS="-L$SSLDIR/lib"
@@ -22,11 +22,11 @@ function build_script {
 	#./configure --prefix=$PREFIX --with-pydebug --with-valgrind
 	./configure \
 		--prefix=$PREFIX \
-		--with-ensurepip=install
+		--with-ensurepip=install || die "Couldn't configure"
 	#--with-valgrind \
 
-	make -j${THREAD_NUM}
-	make install
+	make -j${THREAD_NUM} || die "Couldn't build"
+	make install || die "Couldn't install"
 }
 
 build_with build_script
@@ -34,3 +34,5 @@ build_with build_script
 module_init
 module_deps "${deps[@]}"
 auto_module_paths
+add_prepend_path "$MFILE" "PYTHONPATH" "lib/python2.7/site-packages"
+

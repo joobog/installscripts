@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export NAME="breeze"
+export VERSION="2.11.2"
+source ./config
+
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" "xios" "esmf/7.0.2" "psyclone/1.4.1" )
+#deps=("")
+
+fetch_local "$ROOT_DIR/downloads/breeze_2.11.2_x86_64.tar.gz"
+
+function build_script {
+  set -x
+	cd breeze_2.11.2_x86_64
+	mkdir -p $PREFIX/bin
+	mv * $PREFIX/bin
+	#module_load "${deps[@]}"
+	set +x
+}
+
+build_with build_script
+
+module_init
+#module_deps "${deps[@]}"
+auto_module_paths

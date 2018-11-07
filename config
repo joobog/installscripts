@@ -1,29 +1,67 @@
 #!/bin/bash
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname ${SCRIPT}`
 
+<<<<<<< HEAD
 INSTALL_ROOT_DIR="/esfs/jtacquaviva/software/install"
 THREAD_NUM=4
 #DATE="$(date +%Y%m%d%H%M)"
 DATE="$(date +%Y%m%d)"
+=======
+. ./system.config
+. ./base.bash
+>>>>>>> 63d2b3df26a80eea7ded168301f7977b0656ad40
 
-CACHEdir="${SCRIPTPATH}/cache_${NAME}"
-SRCdir="${CACHEdir}/${NAME}-${VERSION}" 		# source directory
+[ ! -z ${NAME+x} ] || die "Variable NAME not defined"
+[ ! -z ${VERSION+x} ] || die "Variable VERSION not defined"
+[ ! -z ${DATE+x} ] || DATE="$(date +%Y%m%d)"
 
+if [ "git" == "$VERSION" ] || [ "svn" == "$VERSION" ]; then
+	VERSION="${VERSION}-${DATE}"
+fi
+
+# Install root dir
+ROOT_DIR="${SCRIPTPATH}/.."
+INSTALL_ROOT_DIR="${SCRIPTPATH}/../install"
+[ ! -d "${INSTALL_ROOT_DIR}" ] && mkdir -p ${INSTALL_ROOT_DIR}
+INSTALL_ROOT_DIR="$(readlink -f ${INSTALL_ROOT_DIR})"
+
+# Cache
+CACHEdir="${SCRIPTPATH}/../cache"
+[ ! -d "${CACHEdir}" ] && mkdir -p ${CACHEdir}
+CACHEdir="$(readlink -f ${CACHEdir})"
+
+# Source
+SRCdir="${CACHEdir}/${NAME}/${VERSION}" 		# source directory
+[ ! -d "${SRCdir}" ] && mkdir -p ${SRCdir}
 BLDdir="${SRCdir}/build" 			# build directory
 PREFIX="${INSTALL_ROOT_DIR}/${NAME}/${VERSION}"		# install directory
-LOG="${CACHEdir}/log"
 
-echo "NAME: ${NAME}"
-echo "VERSION: ${VERSION}"
-echo "DATE: ${DATE}"
-echo "INSTALL_ROOT_DIR: ${INSTALL_ROOT_DIR}"
-echo "cache dir: ${CACHEdir}" 
-echo "source dir: ${SRCdir}"
-echo "build dir: ${BLDdir}"
-echo "install dir: ${PREFIX}"
+# Modules
+MPATH="${SCRIPTPATH}/../modules/${USER}"
+[ ! -d "${MPATH}" ] && mkdir -p ${MPATH}
+MPATH="$(readlink -f ${MPATH})"
 
-if [ ! -d "${CACHEdir}" ]
-then
-	mkdir "${CACHEdir}"
-else
-	echo "already exists ${CACHEdir}"
-fi
+MFILE="${MPATH}/${NAME}/${VERSION}"
+[ ! -d "$(dirname ${MFILE})" ] && mkdir -p $(dirname ${MFILE})
+
+export MODULEPATH="${MPATH}:$MODULEPATH"
+
+
+# Others
+THREAD_NUM=16
+
+## Print paths ##
+
+WIDTH=20 
+echo "INSTALL SUMMARY:"
+echo "================"
+printf "\t%-*s: %s\n" ${WIDTH} "NAME:" "${NAME}"
+printf "\t%-*s: %s\n" ${WIDTH} "VERSION:" "${VERSION}"
+printf "\t%-*s: %s\n" ${WIDTH} "CACHE:" "${CACHEdir}" 
+printf "\t%-*s: %s\n" ${WIDTH} "SOURCE:" "${SRCdir}"
+printf "\t%-*s: %s\n" ${WIDTH} "BUILD:" "${BLDdir}"
+printf "\t%-*s: %s\n" ${WIDTH} "INSTALL_ROOT_DIR:" "${INSTALL_ROOT_DIR}"
+printf "\t%-*s: %s\n" ${WIDTH} "INSTALL:" "${PREFIX}"
+printf "\t%-*s: %s\n" ${WIDTH} "MPATH:" "${MPATH}"
+printf "\t%-*s: %s\n" ${WIDTH} "MFILE:" "${MFILE}"

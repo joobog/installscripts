@@ -1,0 +1,48 @@
+#!/bin/bash
+
+export NAME="xios"
+export VERSION="svn"
+source ./config
+
+fetch_svn "http://forge.ipsl.jussieu.fr/ioserver/svn/XIOS/trunk"
+
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
+
+function build_script {
+	set -x
+	module_load "${deps[@]}"
+
+	exists ncdump
+	exists h5dump
+	exists nf-config
+  H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
+  MPIDIR="$(readlink -f $(dirname $(which mpicc))/..)"
+  NFDIR="$(readlink -f $(dirname $(which nf-config))/..)"
+	NCDIR="$(readlink -f $(dirname $(which ncdump))/..)"
+
+	export XIOS_FINCDIR="$XIOS_FINCDIR -I${H5DIR}/include -I${NFDIR}/include -I${MPIDIR}/include"
+	export XIOS_CINCDIR="$XIOS_CINCDIR -I${H5DIR}/include -I${NCDIR}/include -I${MPIDIR}/include"
+	export XIOS_LIB="$XIOS_LIB -L${H5DIR}/lib -L${NCDIR}/lib -L${NFDIR}/lib -L${MPIDIR}/lib"
+
+  export NETCDF_DIR=${NFDIR}
+  export HDF5_DIR=${H5DIR}
+
+  #mv XIOS xios && pushd xios
+  sed -i "s#%BASE_CFLAGS    -ansi -w#%BASE_CFLAGS    -ansi -w -D_GLIBCXX_USE_CXX11_ABI=0#" ./arch/arch-GCC_LINUX.fcm
+  ./make_xios --full --arch GCC_LINUX --job $THREAD_NUM || die "Couldn't make"
+
+  pushd inputs
+  mpiexec -n $THREAD_NUM ../bin/test_client.exe || die "Test failed" # test that everything works
+  popd
+
+	mkdir -p $PREFIX
+	mv $SRCdir/* $PREFIX
+
+	set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+export NAME="chevrotain"
+export VERSION="0.0.1"
+source ./config
+
+declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" "xios/svn-20180117" "esmf/7.0.2"  )
+
+fetch_local "/home/dkrz/k202107/software/downloads/chevrotain2.tgz"
+
+function build_script {
+  #set -x
+	cd chevrotain
+	module_load "${deps[@]}"
+
+	#svn export --username <your_SRS_username> https://code.metoffice.gov.uk/svn/lfric/LFRic/tags/chevrotain
+	#(supply password when prompted)
+
+	exists ESMF_Info
+	ESMFDIR="$(readlink -f $(dirname $(which ESMF_Info))/../../..)"
+
+	export FC=gfortran
+	export FPP="cpp -traditional-cpp"
+	export LDMPI=mpif90
+	#BUILD_DIR="/home/dkrz/k202107/software/cache/xios/svn-20180117"
+	exists xios_server.exe
+	BUILD_DIR="$(readlink -f $(dirname $(which xios_server.exe))/..)"
+
+	ADD_INC=$(find $INSTALL_ROOT_DIR -maxdepth 3 -type d -regextype posix-egrep -regex ".*/include" -printf "-I/$%h/include ")
+	ADD_LIB=$(find $INSTALL_ROOT_DIR -maxdepth 3 -type d -regextype posix-egrep -regex ".*/lib" -printf "-L/$%h/lib ")
+	ADD_LIB+=$(find $INSTALL_ROOT_DIR -maxdepth 3 -type d -regextype posix-egrep -regex ".*/lib64" -printf "-L/$%h/lib64 ")
+
+	export FFLAGS="-I$BUILD_DIR/inc -I$ESMFDIR/mod/modO/Linux.gfortran.64.mpich2.default $ADD_INC"
+	export LDFLAGS="-L$BUILD_DIR/lib -L$ESMFDIR/lib/libO/Linux.gfortran.64.mpich2.default $ADD_LIB"
+	export CPPFLAGS="-I$ESMFDIR/mod/modO/Linux.gfortran.64.mpich2.default $ADD_INC"
+	export LD_LIBRARY_PATH="$ESMFDIR/lib/libO/Linux.gfortran.64.mpich2.default:$LD_LIBRARY_PATH"
+
+	sed -i "s/export EXTERNAL_STATIC_LIBRARIES = xios.*/export EXTERNAL_STATIC_LIBRARIES = xios stdc++ netcdff netcdf esmf/" gungho/Makefile
+
+	cd gungho
+	make VERBOSE=1 build  || die "Couldn't build"
+	#cd example
+
+	mkdir -p $PREFIX
+	cp -r bin $PREFIX
+
+	echo "You may want to run:"
+	echo "../../bin/gungho gungho_configuration.nml"
+	echo "mpiexec -np 6 ../../bin/gungho gungho_configuration.nml"
+
+	#../bin/gungho gungho_configuration.nml
+	#set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

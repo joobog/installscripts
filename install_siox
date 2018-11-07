@@ -1,0 +1,76 @@
+#!/bin/bash
+
+export NAME="siox"
+export VERSION="git"
+source ./config
+declare -a deps=( "python/3.6.4" "boost/1.66" "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "pcre/8.41" "glib/2.55.2" )
+
+
+fetch_git "https://github.com/JulianKunkel/siox.git"
+
+function build_script {
+	module_load "${deps[@]}"
+	[ ! -d build ] && mkdir build
+	cd build
+
+	set -x
+	GLIBDIR="$(readlink -f $(dirname $(which gio))/..)"
+
+ ${SRCdir}/configure \
+	 --prefix=${PREFIX} \
+	 --with-cc=$(which gcc) \
+	 --with-cxx=$(which g++) \
+	 --with-boost=${BOOST_ROOT} \
+	 --with-glib=${GLIBDIR}  \
+	 --build-dir=${BLDdir} || die "configure failed"
+
+ #--with-likwid=${INSTALL_ROOT_DIR}/likwid/3.1.3
+ #--with-libpqxx=${INSTALL_ROOT_DIR}/libpqxx/4.0.1 \
+ #--with-libpq=${INSTALL_ROOT_DIR}/postgresql/9.1.15 \
+ #--with-libpqxx=${INSTALL_ROOT_DIR}/libpqxx/4.0.1 \
+ #--with-boost=${INSTALL_ROOT_DIR}/boost/1_61_0 \
+ #--with-glib=${INSTALL_ROOT_DIR}/glib/2.48.0  \
+ set +x
+
+ cd "${BLDdir}"
+ make -j${THREAD_NUM} || die "build failed"
+ make install || "install failed"
+
+ ## INSTALL WRAPPERS ###
+ ln -s $PREFIX/lib64 $PREFIX/lib
+
+ set -x
+ cd $SRCdir/tools/siox-skeleton-builder/layers/posix-deedless/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX}/bullshit
+ ./waf install
+
+ cd $SRCdir/tools/siox-skeleton-builder/layers/posix-replay/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX}/bullshit
+ ./waf install
+
+ H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
+ NCDIR="$(readlink -f $(dirname $(which ncdump))/..)"
+
+ cd $SRCdir/tools/siox-skeleton-builder/layers/posix/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX}
+ ./waf install
+
+ cd $SRCdir/tools/siox-skeleton-builder/layers/mpi/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX} --mpi-const
+ ./waf install
+
+ cd $SRCdir/tools/siox-skeleton-builder/layers/hdf5/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX} --hdf5="${H5DIR}"
+ ./waf install
+
+ cd $SRCdir/tools/siox-skeleton-builder/layers/netcdf4/
+ ./waf configure --siox=${PREFIX}  --prefix=${PREFIX} --netcdf=="${NCDIR}"
+ ./waf install
+ set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

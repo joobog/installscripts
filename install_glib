@@ -1,0 +1,29 @@
+#!/bin/bash
+
+export NAME="glib"
+export VERSION="2.55.2"
+source ./config
+
+fetch_http "http://ftp.acc.umu.se/pub/GNOME/sources/glib/2.55/glib-2.55.2.tar.xz"
+
+declare -a deps=( "pcre/8.41" )
+
+function build_script {
+	set -x
+	cd glib-$VERSION
+	module_load "${deps[@]}"
+
+	./configure \
+		--prefix=${PREFIX} \
+		--disable-libmount || die "Couldn't configure"
+
+	make -j $THREAD_NUM || die "Couldn't make"
+	make install  -j $THREAD_NUM || die "Couldn't install"
+	set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths
