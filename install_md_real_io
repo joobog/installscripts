@@ -4,7 +4,7 @@ export NAME="md_real_io"
 export VERSION="git"
 source ./config
 #declare -a deps=( "python/3.6.4" "boost/1.66" "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "pcre/8.41" "glib/2.55.2" )
-declare -a deps=( "mpich/3.2"  )
+declare -a deps=( )
 
 
 fetch_git "https://github.com/JulianKunkel/md-real-io"

@@ -6,7 +6,8 @@ source ./config
 
 fetch_http "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VERSION.tar.gz"
 
-declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
+declare -a deps=( "hdf5/1.8.20" )
 
 function build_script {
 	set -x
