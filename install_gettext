@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export NAME="gettext"
+export VERSION="0.19.8"
+source ./config
+
+fetch_http "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.tar.gz"
+
+function build_script {
+
+	cd gettext-0.19.8
+	./configure \
+		--prefix=$PREFIX || die "Couldn't configure"
+	make -j $THREAD_NUM || die "Couldn't make"
+	make install  -j $THREAD_NUM || die "Couldn't install"
+}
+
+build_with build_script
+
+module_init
+auto_module_paths
