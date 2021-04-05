@@ -2,7 +2,7 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname ${SCRIPT}`
 
-INSTALL_ROOT_DIR="/esfs/jtacquaviva/software/install"
+INSTALL_ROOT_DIR="$SCRIPTPATH/../install"
 THREAD_NUM=4
 #DATE="$(date +%Y%m%d%H%M)"
 DATE="$(date +%Y%m%d)"

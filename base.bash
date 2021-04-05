@@ -80,11 +80,27 @@ function fetch_local {
 	if [ ! -e "${l_bn}" ] 
 	then
 		cd ${SRCdir}
-		cp ${l_fn} ./${l_bn}
+		cp -r ${l_fn} ./${l_bn}
 	else
 		echo "INFO: ${NAME}-${VERSION} is already downloaded"
 	fi
 	extract "${l_bn}"
+	popd > /dev/null
+}
+
+
+function fetch_local_dir {
+	local l_fn="$1"
+
+	pushd $PWD > /dev/null
+	local l_dirname="$(basename ${l_fn})"
+	if [ ! -d "${l_dirname}" ] 
+	then
+		cd ${SRCdir}
+		cp -r ${l_fn} ./${l_dirname}
+	else
+		echo "INFO: ${NAME}-${VERSION} is already downloaded"
+	fi
 	popd > /dev/null
 }
 
@@ -161,10 +177,14 @@ function module_paths {
 }
 
 function module_load {
+    echo "Loading modules"
 	local -a tokens=($@)
 	for token in ${tokens[@]}; do
 		#module load -f $MPATH/$token
-		module load -f $USER/$token
+        #echo "Loading" $USER/$token
+		#module load -f $USER/$token
+        echo "Loading" $token
+        module load -f $token
 	done
 	module list
 }
@@ -172,7 +192,8 @@ function module_load {
 function module_deps {
 	local -a tokens=($@)
 	for token in ${tokens[@]}; do
-		add_prereq $MFILE $USER/$token
+		#add_prereq $MFILE $USER/$token
+		add_prereq $MFILE $token
 	done
 }
 
