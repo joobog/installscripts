@@ -1,0 +1,42 @@
+#!/bin/bash
+
+export NAME="bison"
+export VERSION="3.6.93"
+source ./config
+
+fetch_http "http://alpha.gnu.org/gnu/bison/bison-3.6.93.tar.gz"
+
+declare -a load=( \
+    "gcc/7.1.0" \
+    "cmake" \
+    "automake" \
+    "autoconf" \
+    "libtool" \
+    )
+
+declare -a deps=( "" )
+
+function build_script {
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+
+    set -x
+    cd bison-$VERSION
+
+    rm build -rf
+    mkdir build
+    cd build
+
+    ../configure \
+        --prefix=${PREFIX} || die "configure failed"
+
+    make -j $THREAD_NUM || die "compile failed"
+    make install  -j $THREAD_NUM || die "install failed"
+    set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

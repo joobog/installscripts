@@ -1,17 +1,17 @@
 #!/bin/bash
 
 export NAME="python"
-export VERSION="2.7.14"
+export VERSION="2.7.15"
 source ./config
 
-fetch_http "https://www.python.org/ftp/python/2.7.14/Python-2.7.14.tgz"
+fetch_http "https://www.python.org/ftp/python/2.7.15/Python-2.7.15.tgz"
 
 declare -a deps=( )
 #declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
 
 function build_script {
 	SSLDIR="$(readlink -f $(dirname $(which openssl))/..)"
-	cd Python-2.7.14
+	cd Python-2.7.15
 	export CC="$(which gcc)"
 	export CXX="$(which g++)"
 	export LDFLAGS="-L$SSLDIR/lib"

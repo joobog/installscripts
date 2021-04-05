@@ -1,0 +1,89 @@
+#!/bin/bash
+
+export NAME="hdf5-vol"
+export VERSION="svn"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+ #"smd/git-20210217" )
+
+
+declare -a load=( \
+   "zlib-1.2.11-gcc-10.2.0-ukah6om" \
+   "automake-1.16.3-gcc-10.2.0-kb4v4li" \
+   "gettext-0.21-gcc-10.2.0-b25zrek" \
+   "libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   "autoconf-2.69-gcc-10.2.0-so25e4q" \
+   "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   "cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   "pcre-8.44-gcc-10.2.0-vbysbfg" \
+   "pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+   "binutils-2.35.1-gcc-7.1.0-h6oupkx" \
+   )
+
+declare -a deps=( \
+   "openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+   ) 
+
+#declare -a load=( \
+#    "gcc/7.1.0" \
+#    "cmake" \
+#    "automake" \
+#    "autoconf" \
+#    "libtool" \
+#    )
+
+#declare -a deps=( \
+#    "openmpi/1.8.4-gcc71" \
+#    ) 
+
+
+fetch_svn "https://svn.hdfgroup.org/hdf5/features/vol/"
+
+function build_script {
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+    pwd
+
+    export CC=mpicc
+
+    ./autogen.sh || die "autogen failed"
+
+    sed -i 's/MPI_Address/MPI_Get_address/g' ./testpar/t_cache.c
+    sed -i 's/MPI_Type_struct/MPI_Type_create_struct/g' ./testpar/t_cache.c
+
+    # build H5Edefin.h and other headers
+    #   Cannot find source file:    <PATH>/esdm/install/download/vol/src/H5Edefin.h
+    ./bin/make_err
+
+    rm -rf build
+    mkdir build
+    cd build
+
+    ../configure \
+        --prefix=$PREFIX\
+        --with-default-plugindir=$DIR/../build/ \
+        --enable-parallel \
+        --enable-build-mode=debug \
+        --enable-hl \
+        --enable-shared   CFLAGS="-g" || die "configure failed"
+
+
+    #cmake \
+    #    -DCMAKE_INSTALL_PREFIX:PATH=$PREFIX \
+    #    -DCMAKE_C_COMPILER:FILEPATH=gcc \
+    #    -DHDF5_GENERATE_HEADERS=ON \
+    #    -DHDF5_ENABLE_PARALLEL=ON \
+    #    -DHDF5_BUILD_HL_LIB=ON \
+    #    -DBUILD_SHARED_LIBS:BOOL=ON \
+    #    -DHDF5_BUILD_CPP_LIB=OFF .. || die "configure failed"
+
+    make -j $THREAD_NUM || die "compile failed"
+    make install || die "install failed"
+    popd
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

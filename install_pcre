@@ -1,10 +1,11 @@
 #!/bin/bash
 
 export NAME="pcre"
-export VERSION="8.41"
+export VERSION="8.44"
 source ./config
 
-fetch_http "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.41.tar.gz"
+#fetch_http "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.44.tar.gz"
+fetch_http "https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz"
 
 declare -a deps=( )
 #declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )

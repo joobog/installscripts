@@ -1,0 +1,183 @@
+#!/bin/bash
+
+export NAME="paraview"
+export VERSION="esdm_osmesa"
+source ./config
+
+declare -a load=( \
+   "zlib-1.2.11-gcc-10.2.0-ukah6om" \
+   "automake-1.16.3-gcc-10.2.0-kb4v4li" \
+   "gettext-0.21-gcc-10.2.0-b25zrek" \
+   "libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   "autoconf-2.69-gcc-10.2.0-so25e4q" \
+   "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   "cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   "pcre-8.44-gcc-10.2.0-vbysbfg" \
+   "binutils-2.35.1-gcc-7.1.0-h6oupkx" \
+   "pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+
+   )
+
+declare -a deps=( \
+    "glib-2.66.7-gcc-10.2.0-zy4zqmg" \
+    "python-3.8.7-gcc-10.2.0-q357mo7" \
+    "openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+    "jansson-2.13.1-gcc-10.2.0-doqambu" \
+    "k202107/esdm/git-20210309" \
+    ) 
+    #"k202107/hdf5-vol/svn-20210219" \
+    #"k202107/esdm-netcdf-c/git-20210309" \
+
+#module purge
+#module load cmake
+#module load python/3.5.2
+#module load openmpi/2.0.2p1_hpcx-gcc64 gcc/6.4.0
+#module load gdal
+
+#fetch_local_dir "/mnt/lustre02/work/kv0653/k202134/Paraview/nik-flo-merge-attempt1/"
+
+function build_script 
+{
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+
+    #rm build -rf
+    #mkdir build
+    cd build
+
+    pwd
+    set -evxu
+
+    NCDIR=$(readlink -f $(dirname $(which ncdump))/..)
+    H5DIR=$(readlink -f $(dirname $(which h5dump))/..)
+    echo NCDIR $NCDIR
+    echo H5DIR $H5DIR
+
+    call_cmake=${call_cmake:-yes}
+    call_make=${call_make:-yes}
+    #OSMESA=${OSMESA:-yes}
+    OSMESA=${OSMESA:-no}
+    TESTING=${TESTING:-OFF}
+
+
+    PARAVIEW_SOURCE_PATH=../nik-flo-merge-attempt1
+    PARAVIEW_SOURCE_PATH=$(readlink -f ${PARAVIEW_SOURCE_PATH})
+
+    if [ ! -d ${PARAVIEW_SOURCE_PATH}/Plugins/staticmeshplugin ] ; then 
+        cd ${PARAVIEW_SOURCE_PATH}/Plugins/
+        git clone https://gitlab.kitware.com/paraview/staticmeshplugin.git 
+        cd -
+    fi 
+
+    if [ ! -f ${PARAVIEW_SOURCE_PATH}/VTK/CMakeLists.txt ] ; then 
+        echo PARAVIEW SUBMODULES MISSING! I will JUST FETCH THEM. 
+        cd ${PARAVIEW_SOURCE_PATH} && git submodule update --init --recursive 
+        cd - 
+    fi 
+
+    >&2 echo USING PARAVIEW_SOURCE_PATH ${PARAVIEW_SOURCE_PATH}
+
+
+    #some of these are necessary
+    LIBRARY_PATH=/sw/rhel6-x64/paraview/ospray-1.8.5/lib64/:/sw/rhel6-x64/paraview/oidn-0.8.2/lib64/:/sw/rhel6-x64/paraview/embree-3.2.0/:/sw/rhel6-x64/x11/qt-5.12.0-gcc64/lib:/sw/rhel6-x64/paraview/nvidia-index-2.4/lib:/sw/rhel6-x64/eccodes/eccodes-2.6.0-gcc64/lib:/sw/rhel6-x64/intel/intel-17.0.6/tbb/lib/intel64/gcc4.7:/work/kv0653/lib:${LIBRARY_PATH} 
+
+    CMAKE_BUILD_TYPE="-DCMAKE_BUILD_TYPE=Release"
+    #CMAKE_INSTALL_PREFIX=$(echo $(readlink -f ../$(basename $(pwd))-install) |sed 's|-build-install|-install|')
+    #CMAKE_INSTALL_PREFIX=${PREFIX}
+    echo INSTALLING TO $PREFIX
+
+
+    CATALYST="-DVTK_MODULE_ENABLE_ParaView_Catalyst=YES -DVTK_MODULE_ENABLE_ParaView_AdaptorsPagosa=NO"
+
+    AUTOLOAD_PLUGINS='-D_paraview_build_AUTOLOAD=CDIReader;EmbossingRepresentations;SurfaceLIC;NetCDFTimeAnnotationPlugin;VTKmFilters;GeographicalMap'
+    GENERAL_SWITCHES="-DPARAVIEW_USE_MPI=YES -DPARAVIEW_USE_PYTHON=YES -DVTKm_ENABLE_MPI=YES -DVTKm_ENABLE_OPENMP=YES -DVTK_GROUP_ENABLE_MPI=YES -DVTK_SMP_IMPLEMENTATION_TYPE=OpenMP -DVTKm_Vectorization=avx2 -DPARAVIEW_BUILD_TESTING=${TESTING} -DPARAVIEW_PLUGIN_ENABLE_GeographicalMap:BOOL=ON -DPARAVIEW_ENABLE_GDAL=YES -DVTK_ALL_NEW_OBJECT_FACTORY=ON  -DPARAVIEW_BUILD_CDI_WITH_GRIB:BOOL=ON"
+
+    if [ "${OSMESA}" = yes ] ; then    
+        GUI_SWITCHES="-DVTK_USE_X=NO -DVTK_MODULE_ENABLE_VTK_GUISupportQt=NO -DPARAVIEW_USE_QT=NO -DVTK_GROUP_ENABLE_Qt=NO -DVTK_OPENGL_HAS_OSMESA=ON  -DOPENGL_xmesa_ROOT=/sw/rhel6-x64/paraview/mesa-18.0.3/ "
+        export  OSMESA_ROOT=/sw/rhel6-x64/paraview/mesa-18.0.3/
+    else
+        GUI_SWITCHES="-DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES -DPARAVIEW_USE_QT=YES -DVTK_GROUP_ENABLE_Qt=YES "
+        AUTOLOAD_PLUGINS="${AUTOLOAD_PLUGINS}"
+    fi
+
+    #export CC=gcc
+    #export CXX=g++
+
+    export CC=$(which mpicc)
+    export CXX=$(which mpic++)
+    echo $CC
+    echo $CXX
+
+    export LIBRARY_PATH=${NCDIR}/lib:${H5DIR}/lib:${LIBRARY_PATH}
+    #:/sw/spack-rhel6/gcc-9.1.0-lsnsye/lib:$(echo $(ls -d  /sw/rhel6-x64/gcc/gcc-*/lib | tac )|sed 's/ /:/g')
+    #export PYTHONHOME=/sw/rhel6-x64/python/python-3.5.2-gcc49/
+    #export PYTHONPATH=/sw/rhel6-x64/python/python-3.5.2-gcc49/lib/
+    #export Python3_INCLUDE_DIR=/sw/rhel6-x64/python/python-3.5.2-gcc49/include/
+
+    export PYTHONHOME="$(readlink -f $(dirname $(which python3))/..)"
+    export PYTHONPATH=${PYTHONHOME}/lib
+    export Python3_INCLUDE_DIR=${PYTHONHOME}/include/
+    export GRIB_DEFINITION_PATH=/sw/rhel6-x64/eccodes/definitions/
+    export QTDIR=/sw/rhel6-x64/x11/qt-5.12.0-gcc64/
+    export Qt5_DIR=${QTDIR}
+    #export  XDG_RUNTIME_DIR=/tmp/
+    export GALLIUM_DRIVER swr
+    export ospray_DIR=/sw/rhel6-x64/paraview/ospray-1.8.5/lib64/cmake/ospray-1.8.5/
+    export TBB_ROOT=/sw/rhel6-x64/intel/intel-17.0.6/tbb/
+    export embree_DIR=/sw/rhel6-x64/paraview/embree-3.2.0/
+    export OpenImageDenoise_DIR=/sw/rhel6-x64/paraview/oidn-0.8.2/lib64/cmake/OpenImageDenoise/
+    export GDAL_DIR=$(/sw/rhel6-x64/gdal-2.1.3-gcc48/bin/gdal-config --prefix)
+    export GDAL_ROOT=$GDAL_DIR
+    GDAL_SWITCH=-DGDAL_LIBRARY=/sw/rhel6-x64/gdal-2.1.3-gcc48/lib/libgdal.so
+    export ECCODES_DIR=/sw/rhel6-x64/eccodes/eccodes-2.6.0-gcc64/
+    export ECCODES_ROOT=/sw/rhel6-x64/eccodes/eccodes-2.6.0-gcc64/
+    GENERAL_SWITCHES="${GENERAL_SWITCHES} ${GDAL_SWITCH} -DECCODES_INCLUDE_DIR=${ECCODES_ROOT}/include/"
+
+    export OMPI_MCA_pml=cm
+    export OMPI_MCA_mtl=mxm
+    export OMPI_MCA_coll='^fca'
+    export MXM_HANDLE_ERRORS=bt
+    export UCX_HANDLE_ERRORS=bt
+    export MXM_LOG_LEVEL=FATAL
+
+    #cp $(which $0) call_cmake
+
+    #   -DCMAKE_CXX_FLAGS='-pthread -march=haswell' -DCMAKE_CFLAGS="-march=haswell"
+    if [ ${call_cmake} == yes ]  ; then 
+        cmake \
+            ${CMAKE_BUILD_TYPE} \
+            ${GENERAL_SWITCHES} \
+            ${GUI_SWITCHES} \
+            ${CATALYST} \
+            -DCMAKE_INSTALL_PREFIX=${PREFIX} \
+            "${AUTOLOAD_PLUGINS}" \
+            -DCMAKE_C_FLAGS="-lrt -O2 -pthread -lm -Wl,-rpath ${NCDIR}/lib -Wl,-rpath ${H5DIR}/lib" \
+            -DCMAKE_CXX_FLAGS="-lrt -O2 -pthread -std=gnu++11 -lstdc++ -lm -Wl,-rpath ${NCDIR}/lib -Wl,-rpath ${H5DIR}/lib" \
+            ${PARAVIEW_SOURCE_PATH}
+            #${PARAVIEW_SOURCE_PATH} > cmake.log 2>&1
+    fi
+
+    if [ ${call_make} == yes ]; then 
+        #make  -j 24 -k VERBOSE=true install > make.log 2>&1
+        make  -j 16 -k VERBOSE=true install
+    fi 
+
+    mkdir -p ${PARAVIEW_SOURCE_PATH}/Plugins/staticmeshplugin/
+    cd ${PARAVIEW_SOURCE_PATH}/Plugins/staticmeshplugin/
+
+    ParaView_DIR=${PREFIX} cmake \
+        ${CMAKE_BUILD_TYPE} \
+        ${GENERAL_SWITCHES} \
+        ${GUI_SWITCHES} \
+        ${CATALYST} \
+        -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+        "${AUTOLOAD_PLUGINS}" \
+        ${PARAVIEW_SOURCE_PATH}/Plugins/staticmeshplugin/
+    make -j 4 install
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+export NAME="pandoc"
+export VERSION="1.17.0.3"
+source ./config
+
+fetch_http "https://hackage.haskell.org/package/pandoc-1.17.0.3/pandoc-1.17.0.3.tar.gz"
+
+declare -a deps=( )
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "netcdf_fortran/4.4.4" )
+
+function build_script {
+	cd pandoc
+	./configure \
+		--prefix=$PREFIX \
+		--with-ensurepip=install
+	#--with-valgrind \
+
+	#make -j${THREAD_NUM}
+	#make install
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

@@ -1,0 +1,92 @@
+#!/bin/bash
+
+export NAME="esdm-netcdf-c"
+export VERSION="git"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+ #"smd/git-20210217" )
+
+
+declare -a load=( \
+   "zlib-1.2.11-gcc-10.2.0-ukah6om" \
+   "automake-1.16.3-gcc-10.2.0-kb4v4li" \
+   "gettext-0.21-gcc-10.2.0-b25zrek" \
+   "libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   "autoconf-2.69-gcc-10.2.0-so25e4q" \
+   "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   "cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   "pcre-8.44-gcc-10.2.0-vbysbfg" \
+   "binutils-2.35.1-gcc-7.1.0-h6oupkx" \
+   "pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+   )
+
+
+declare -a deps=( \
+   "openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+   "jansson-2.13.1-gcc-10.2.0-doqambu" \
+   "glib-2.66.7-gcc-10.2.0-zy4zqmg" \
+   "k202107/esdm/git-20210309" \
+   "k202107/hdf5-vol/svn-20210219" \
+   ) 
+
+#declare -a load=( \
+#    "gcc/7.1.0" \
+#    "cmake" \
+#    "automake" \
+#    "autoconf" \
+#    "libtool" \
+#    )
+
+#declare -a deps=( \
+#    "openmpi/1.8.4-gcc71" \
+#    "k202107/jansson/2.13.1" \
+#    "k202107/python/2.7.15" \
+#    "k202107/pcre/8.44" \
+#    "k202107/glib/2.56.4" \
+#    "k202107/esdm/git-20210219" \
+#    "k202107/hdf5-vol/svn-20210219" \
+#    ) 
+
+
+fetch_git "https://github.com/ESiWACE/esdm-netcdf-c"
+
+function build_script {
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+
+    echo "ZLIB $(pkg-config --libs zlib)"
+    echo "ZLIB $(pkg-config --cflags zlib)"
+    echo "ZLIB $(pkg-config --libs-only-L zlib)"
+
+    set -x
+
+    ESDMPATH="$(readlink -f $(dirname $(which mkfs.esdm))/..)"
+    HDF5PATH="$(readlink -f $(dirname $(which h5dump))/..)"
+
+    ./bootstrap || die "bootstrap failed"
+
+    set -x
+    #export LDFLAGS="-L$HDF5PATH/lib -L$ESDMPATH/lib $(pkg-config --libs-only-L zlib)" 
+    #export CFLAGS="-I$HDF5PATH/include -I$ESDMPATH/include $(pkg-config --cflags zlib) -g3"
+
+    ./configure \
+        --prefix=$PREFIX \
+        --enable-hdf5 \
+        --enable-esdm \
+        --with-esdm=$ESDMPATH \
+        --disable-dap \
+        CC=gcc \
+        LDFLAGS="-L$HDF5PATH/lib -L$ESDMPATH/lib  $(pkg-config --libs-only-L ompi) -L/mnt/lustre01/work/ku0598/k202107/git/spack/opt/spack/linux-rhel6-haswell/gcc-10.2.0/zlib-1.2.11-ukah6omovlerxj27lgp5rzjb4wrnar4b/lib $(pkg-config --libs-only-L zlib)" \
+        CFLAGS="-I$HDF5PATH/include -I$ESDMPATH/include $(pkg-config --cflags ompi) $(pkg-config --cflags zlib) -g3" || die "configure failed"
+
+
+    make -j $THREAD_NUM || die "compile failed"
+    make install || die "install failed"
+
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

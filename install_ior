@@ -13,20 +13,21 @@ function build_script {
     set -x
     make clean
 
-    export C_INCLUDE_PATH="$C_INCLUDE_PATH:/usr/include"
-    export LDFLAGS="-Wl,-rpath=${MPIDIR}/lib -L${MPIDIR}/lib -L${H5DIR}/lib -lgpfs" 
-    export CPPFLAGS="-I${MPIDIR}/include -I${H5DIR}/include -I/usr/include"
+    #export C_INCLUDE_PATH="$C_INCLUDE_PATH:/usr/include"
+    #export LDFLAGS="-Wl,-rpath=${MPIDIR}/lib -L${MPIDIR}/lib -L${H5DIR}/lib -lgpfs" 
+    #export CPPFLAGS="-I${MPIDIR}/include -I${H5DIR}/include -I/usr/include"
 
     ./configure \
         --prefix="${PREFIX}" \
-        --with-ime \
         --with-posix \
-        --with-mpiio 
-        # --with-lustre 
+        --with-mpiio || die "Configure failed"
+
+        #--with-lustre \
+        #--with-ime \
 
     set +x
-    make -j${THREAD_NUM}
-    make install
+    make -j${THREAD_NUM} || die "Make failde"
+    make install || die "Install failed"
 }
 
 

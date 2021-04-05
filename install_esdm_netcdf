@@ -1,0 +1,50 @@
+#!/bin/bash
+
+export NAME="esdm-netcdf"
+export VERSION="git"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+ #"smd/git-20210217" )
+declare -a load=( \
+    "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+    )
+declare -a deps=( \
+    "k202107/jansson/2.13.1" \
+    "k202107/python/2.7.15" \
+    "k202107/pcre/8.44" \
+    "k202107/glib/2.56.4" \
+    "k202107/smd/git-20210217" \
+    "k202107/esdm/git-20210217" \
+    ) 
+
+fetch_git "https://github.com/ESiWACE/esdm-netcdf"
+
+function build_script {
+	module_load "${deps[@]}"
+
+    ESDMPATH="$(dirname $(which mkfs.esdm))/.."
+
+    autoreconf --install --force
+
+    ./configure \
+      --prefix=$PREFIX \
+      --with-esdm=$ESDMPATH \
+      LDFLAGS="" \
+      CFLAGS="-g3" \
+      CC=mpicc \
+      --disable-dap || die "configure failed"
+
+      #--with-hdf5=$HOME/install \
+  #LDFLAGS="-L$HOME/install/lib" \
+  #CFLAGS="-I$HOME/install/include -g3" \
+
+    make -j || die "compile failed"
+    make install || die "install failed"
+
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

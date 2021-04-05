@@ -1,0 +1,26 @@
+#!/bin/bash
+
+export NAME="tmux"
+export VERSION="2.9a"
+source ./config
+
+declare -a deps=( "" )
+deps=("")
+
+fetch_http "https://github.com/tmux/tmux/releases/download/2.9a/tmux-2.9a.tar.gz"
+
+function build_script {
+  set -x
+	cd tmux-2.9a
+	module_load "${deps[@]}"
+    ./configure \
+		--prefix=$PREFIX || die "Couldn't configure"
+    make install || die "Couldn't install"
+	set +x
+}
+
+build_with build_script
+
+module_init
+#module_deps "${deps[@]}"
+auto_module_paths

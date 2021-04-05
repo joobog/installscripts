@@ -1,21 +1,19 @@
 #!/bin/bash
 
-export NAME="glib"
-export VERSION="2.56.4"
+export NAME="xz"
+export VERSION="5.2.4"
 source ./config
 
-fetch_http "http://ftp.acc.umu.se/pub/GNOME/sources/glib/2.56/glib-2.56.4.tar.xz"
-
-declare -a deps=( "pcre/8.44" "python/2.7.15" )
+fetch_http "https://tukaani.org/xz/xz-5.2.4.tar.xz"
+declare -a deps=(  )
 
 function build_script {
 	set -x
-	cd glib-$VERSION
+	cd xz-$VERSION
 	module_load "${deps[@]}"
 
 	./configure \
-		--prefix=${PREFIX} \
-		--disable-libmount || die "Couldn't configure"
+		--prefix=${PREFIX}  || die "Couldn't configure"
 
 	make -j $THREAD_NUM || die "Couldn't make"
 	make install  -j $THREAD_NUM || die "Couldn't install"

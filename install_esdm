@@ -1,0 +1,60 @@
+#!/bin/bash
+
+export NAME="esdm"
+export VERSION="git"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+
+declare -a load=( \
+   "libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   "autoconf-2.69-gcc-10.2.0-so25e4q" \
+   "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   "cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   "pcre-8.44-gcc-10.2.0-vbysbfg" \
+   "pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+   )
+
+declare -a deps=( \
+   "openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+   "jansson-2.13.1-gcc-10.2.0-doqambu" \
+   "glib-2.66.7-gcc-10.2.0-zy4zqmg" \
+   ) 
+
+#declare -a load=( \
+#    "gcc/7.1.0" \
+#    "cmake" \
+#    "automake" \
+#    "autoconf" \
+#    "libtool" \
+#    )
+
+#declare -a deps=( \
+#    "openmpi/1.8.4-gcc71" \
+#    "k202107/jansson/2.13.1" \
+#    "k202107/python/2.7.15" \
+#    "k202107/pcre/8.44" \
+#    "k202107/glib/2.56.4" \
+#    ) 
+
+fetch_git "https://github.com/ESiWACE/esdm"
+
+function build_script {
+    module_load "${load[@]}"
+	module_load "${deps[@]}"
+
+    pushd deps
+    ./prepare.sh
+    popd
+
+    ./configure --with-cc=$(which gcc) --with-mpicc=$(which mpicc) --prefix=$PREFIX --enable-netcdf4 || die "configure failed"
+
+    cd build
+    make -j $THREAD_NUM || die "compile failed"
+	make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

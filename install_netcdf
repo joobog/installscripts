@@ -1,13 +1,13 @@
 #!/bin/bash
 
 export NAME="netcdf"
-export VERSION="4.5.0"
+export VERSION="4.6.1"
 source ./config
 
 fetch_http "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VERSION.tar.gz"
 
 #declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
-declare -a deps=( "hdf5/1.8.20" )
+declare -a deps=( "hdf5/1.10.5" )
 
 function build_script {
 	set -x
@@ -20,17 +20,17 @@ function build_script {
  FF=$(which mpif90)
  FC=$(which mpif90)
 
+ MPIDIR="$(readlink -f $(dirname $(which mpiexec))/..)"
  H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
  #export LDFLAGS="-L${H5DIR}/lib -Wl,--rpath=${H5DIR}/lib"
  export LDFLAGS="-L${H5DIR}/lib"
- export CPPFLAGS="-I${H5DIR}/include"
- export CFLAGS="-I${H5DIR}/include"
+ export CPPFLAGS="-I${H5DIR}/include -I${MPIDIR}/include"
+ export CFLAGS=""
 
 ./configure \
  --prefix=${PREFIX} \
  --enable-shared \
  --enable-static || die "Couldn't configure"
-
 
  make -j $THREAD_NUM || die "Couldn't make"
  make install  -j $THREAD_NUM || die "Couldn't install"

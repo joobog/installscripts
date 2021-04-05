@@ -1,0 +1,63 @@
+#!/bin/bash
+
+export NAME="cdi"
+export VERSION="1.9.1-patched"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+ #"smd/git-20210217" )
+
+declare -a load=( \
+   "zlib-1.2.11-gcc-10.2.0-ukah6om" \
+   "automake-1.16.3-gcc-10.2.0-kb4v4li" \
+   "gettext-0.21-gcc-10.2.0-b25zrek" \
+   "libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   "autoconf-2.69-gcc-10.2.0-so25e4q" \
+   "gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   "cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   "pcre-8.44-gcc-10.2.0-vbysbfg" \
+   "binutils-2.35.1-gcc-7.1.0-h6oupkx" \
+   "pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+   )
+
+declare -a deps=( \
+    "openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+    "k202107/esdm/git-20210219" \
+    "k202107/hdf5-vol/svn-20210219" \
+    "glib-2.66.7-gcc-10.2.0-zy4zqmg" \
+    "jansson-2.13.1-gcc-10.2.0-doqambu" \
+    "k202107/esdm/git-20210219" \
+    "k202107/esdm-netcdf-c/git-20210219" \
+    "eccodes/2.19.1-pgi-19.9" \
+    ) 
+
+    #"k202107/python/2.7.15" \
+    #"k202107/pcre/8.44" \
+    #"k202107/glib/2.56.4" \
+
+#set -x
+#fetch_local_dir "/mnt/lustre02/work/kv0653/k202134/Paraview/nik-flo-merge-attempt1/ThirdParty/CDI"
+#fetch_local_dir "/mnt/lustre02/work/kv0653/k202134/Paraview/nik-flo-merge-attempt1/"
+fetch_http "https://code.mpimet.mpg.de/attachments/download/15646/cdi-1.9.1.tar.gz"
+
+function build_script {
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+    pwd
+    cd cdi-1.9.1
+    #cp /home/dkrz/k202134/pv/nik-flo-merge-attempt1/ThirdParty/CDI/cdi/* ./src
+
+    ./configure \
+      --prefix=$PREFIX \
+      --with-netcdf=yes \
+      --enable-grib \
+      --disable-dap || die "configure failed"
+
+    make -j 16 || die "compile failed"
+    make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

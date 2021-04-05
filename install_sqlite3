@@ -1,0 +1,26 @@
+#!/bin/bash
+
+export NAME="sqlite"
+export VERSION="3300100"
+source ./config
+
+declare -a deps=( "" )
+deps=("")
+
+fetch_http "https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz"
+
+function build_script {
+  set -x
+	cd sqlite-autoconf-3300100
+	module_load "${deps[@]}"
+    ./configure \
+		--prefix=$PREFIX || die "Couldn't configure"
+    make -j${THREAD_NUM} install || die "Couldn't install"
+	set +x
+}
+
+build_with build_script
+
+module_init
+#module_deps "${deps[@]}"
+auto_module_paths

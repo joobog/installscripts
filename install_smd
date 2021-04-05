@@ -1,0 +1,27 @@
+#!/bin/bash
+
+export NAME="smd"
+export VERSION="git"
+source ./config
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" )
+declare -a deps=( "" )
+
+fetch_git "https://github.com/JulianKunkel/smd.git"
+
+function build_script {
+	module_load "${deps[@]}"
+
+    ./configure \
+        --prefix=$PREFIX \
+        --with-cc=$(which gcc)|| die "configure failed"
+
+    cd build
+    make || die "compile failed"
+	make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

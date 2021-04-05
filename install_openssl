@@ -1,0 +1,26 @@
+#!/bin/bash
+
+export NAME="openssl"
+export VERSION="3.0.0-alpha11"
+source ./config
+
+declare -a deps=( "" )
+deps=("")
+
+fetch_http "https://www.openssl.org/source/openssl-3.0.0-alpha11.tar.gz"
+
+function build_script {
+  set -x
+	cd openssl-${VERSION}
+	module_load "${deps[@]}"
+    ./Configure --prefix=$PREFIX || die "configure failed"
+    make || die "compile failed"
+    make install || die "install failed"
+	set +x
+}
+
+build_with build_script
+
+module_init
+#module_deps "${deps[@]}"
+auto_module_paths

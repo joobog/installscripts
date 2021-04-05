@@ -1,0 +1,35 @@
+#!/bin/bash
+
+export NAME="stack"
+export VERSION="git"
+source ./config
+#declare -a deps=( "python/3.6.4" "boost/1.66" "mpich/3.2" "hdf5/1.8.20" "netcdf/4.5.0" "pcre/8.41" "glib/2.55.2" )
+declare -a deps=( )
+
+
+fetch_git " https://github.com/commercialhaskell/stack.git"
+
+function build_script {
+	module_load "${deps[@]}"
+
+    set -x
+
+    
+	#./configure \
+	#        --prefix=${PREFIX} || die "configure failed"
+
+	#        #--with-libs3=$S3DIR
+
+	#[ ! -d build ] && mkdir build
+	#cd build
+
+	#make -j ${THREAD_NUM} || die "make failed"
+	#make install || die "install failed"
+	set +x
+}
+
+build_with build_script
+
+#module_init
+#module_deps "${deps[@]}"
+#auto_module_paths
