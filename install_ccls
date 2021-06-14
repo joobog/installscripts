@@ -1,0 +1,46 @@
+#!/bin/bash
+
+export NAME="ccls"
+export VERSION="git"
+source ./config
+
+
+fetch_git " --depth=1 --recursive https://github.com/MaskRay/ccls"
+
+module unload gnu
+module load clang/11.0.1
+
+declare -a deps=( \
+)
+
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+
+function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+  set -x
+
+  echo $PWD
+  [[ -d "build" ]] && rm -r build
+  mkdir build
+  cd build
+
+  LLVMDIR="$(readlink -f $(dirname $(which llvm-config))/..)"
+
+  cmake -H. -BRelease -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$PREFIX \
+    -DCMAKE_PREFIX_PATH=${LLVMDIR} \
+    -DLLVM_INCLUDE_DIR=${LLVMDIR}/include \
+    -DLLVM_BUILD_INCLUDE_DIR=${LLVMDIR}/ .. || die "configure failed"
+
+  cmake --build Release -- -j$THREAD_NUM || die "make failed"
+  cmake --install Release || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

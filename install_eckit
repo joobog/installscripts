@@ -1,0 +1,44 @@
+#!/bin/bash
+
+export NAME="eckit"
+export VERSION="git"
+source ./config
+
+fetch_git "https://github.com/ecmwf/eckit.git"
+
+declare -a deps=( \
+  "maee/libaec/git-20210405" \
+)
+
+declare -a load=( \
+  "cmake/3.19.5" \
+  "ecbuild/3.6.1" \
+)
+
+function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+  set -x
+
+  echo $PWD
+  mkdir build
+  cd build
+
+  AECDIR="$(readlink -f $(dirname $(which aec))/..)"
+
+  ecbuild  \
+    --prefix=$PREFIX \
+    -DAEC_INCLUDE_DIR="$AECDIR/include" \
+    -DAEC_LIBRARY="$AECDIR/lib64/libaec.so" \
+    -DENABLE_AEC=ON \
+    -- $SRCdir || die "configure failed"
+
+  make -j$THREAD_NUM || die "make failed"
+  make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

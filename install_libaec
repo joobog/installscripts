@@ -1,0 +1,35 @@
+#!/bin/bash
+
+export NAME="libaec"
+export VERSION="git"
+source ./config
+
+#fetch_http "https://www.dkrz.de/redmine/attachments/download/453/libaec-${VERSION}.tar.gz"
+fetch_git "https://github.com/MathisRosenhauer/libaec.git"
+
+#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
+declare -a deps=( "" )
+declare -a load=( "cmake/3.19.5" )
+
+function build_script {
+    module_load "${load[@]}"
+    module_load "${deps[@]}"
+	set -x
+ #cd libaec-$VERSION
+
+ echo $PWD
+ mkdir build
+ cd build
+ #../configure --prefix=${PREFIX} || die "Configure failed"
+ cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} .. || die "Configure failed"
+
+ make -j $THREAD_NUM || die "Make failed"
+ make install  -j $THREAD_NUM || die "Install failed"
+ set +x
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

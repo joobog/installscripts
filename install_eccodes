@@ -1,0 +1,67 @@
+#!/bin/bash
+
+export NAME="eccodes"
+export VERSION="2.21.0"
+export LABEL="release"
+source ./config
+
+#declare -a load=( \
+   #"libtool-2.4.6-gcc-10.2.0-oq2xmcq" \
+   #"autoconf-2.69-gcc-10.2.0-so25e4q" \
+   #"gcc-10.2.0-gcc-7.1.0-3o6mwwu" \
+   #"cmake-3.19.5-gcc-10.2.0-nktbmrb" \
+   #"pcre-8.44-gcc-10.2.0-vbysbfg" \
+   #"pkgconf-1.7.3-gcc-10.2.0-oub6luh" \
+   #)
+
+#declare -a deps=( \
+   #"openmpi-4.0.5-gcc-10.2.0-4utavoz" \
+   #"jansson-2.13.1-gcc-10.2.0-doqambu" \
+   #"glib-2.66.7-gcc-10.2.0-zy4zqmg" \
+   #) 
+
+
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+
+declare -a deps=( \
+  "aec/1.0.4" \
+)
+
+
+#fetch_http "https://confluence.ecmwf.int/download/attachments/45757960/eccodes-2.21.0-Source.tar.gz?api=v2"
+
+function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+
+  cd eccodes-2.21.0-Source
+
+  [[ -e "build" ]] && rm -rf build
+  mkdir build
+  cd build
+
+  set -x
+  AECDIR="$(readlink -f $(dirname $(which aec))/..)"
+
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=$PREFIX \
+    -DAEC_INCLUDE_DIR="$AEC_DIR/include" \
+    -DAEC_LIBRARY="$AEC_DIR/lib64/libaec.so" \
+    -DENABLE_AEC=ON \
+    -DENABLE_PNG=ON \
+    -DENABLE_JPG=ON \
+    || die "configure failed"
+    #-DCMAKE_BUILD_TYPE=Debug \
+    #-DCMAKE_CXX_FLAGS_DEBUG:STRING=-g3 \
+
+  make -j 8 || die "make failed"
+  make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

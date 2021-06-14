@@ -1,0 +1,33 @@
+#!/bin/bash
+
+export NAME="cpputest"
+export VERSION="git"
+source ./config
+
+fetch_git "https://github.com/cpputest/cpputest.git"
+
+declare -a deps=( )
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+
+function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+  set -x
+
+  echo $PWD
+  mkdir build
+  cd build
+
+  autoreconf .. -i || die "autoreconf failed"
+  ../configure --prefix=$PREFIX || die "configure failed"
+  make || die "make failed"
+  make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths

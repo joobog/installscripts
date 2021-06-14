@@ -1,0 +1,32 @@
+#!/bin/bash
+
+export NAME="etterminal"
+export VERSION="git"
+source ./config
+
+fetch_git "--recurse-submodules https://github.com/MisterTea/EternalTerminal.git"
+
+declare -a deps=( )
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+
+function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+  set -x
+
+  echo $PWD
+  mkdir build
+  cd build
+
+  cmake -DCMAKE_INSTALL_PREFIX=$PREFIX .. || die "configure failed"
+  make -j$THREAD_NUM || die "make failed"
+  make install || die "install failed"
+}
+
+build_with build_script
+
+module_init
+module_deps "${deps[@]}"
+auto_module_paths
