@@ -2,7 +2,8 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname ${SCRIPT}`
 
-INSTALL_ROOT_DIR="$SCRIPTPATH/../install"
+#INSTALL_ROOT_DIR="$SCRIPTPATH/../install"
+#INSTALL_ROOT_DIR="$HOME/install"
 THREAD_NUM=4
 #DATE="$(date +%Y%m%d%H%M)"
 DATE="$(date +%Y%m%d)"
@@ -18,13 +19,14 @@ if [ "git" == "$VERSION" ] || [ "svn" == "$VERSION" ]; then
 fi
 
 # Install root dir
-ROOT_DIR="${SCRIPTPATH}/.."
-INSTALL_ROOT_DIR="${SCRIPTPATH}/../install"
+#ROOT_DIR="${SCRIPTPATH}/.."
+ROOT_DIR="${HOME}/software"
+INSTALL_ROOT_DIR="${ROOT_DIR}/install"
 [ ! -d "${INSTALL_ROOT_DIR}" ] && mkdir -p ${INSTALL_ROOT_DIR}
 INSTALL_ROOT_DIR="$(readlink -f ${INSTALL_ROOT_DIR})"
 
 # Cache
-CACHEdir="${SCRIPTPATH}/../cache"
+CACHEdir="${ROOT_DIR}/cache"
 [ ! -d "${CACHEdir}" ] && mkdir -p ${CACHEdir}
 CACHEdir="$(readlink -f ${CACHEdir})"
 
@@ -32,21 +34,30 @@ CACHEdir="$(readlink -f ${CACHEdir})"
 SRCdir="${CACHEdir}/${NAME}/${VERSION}" 		# source directory
 [ ! -d "${SRCdir}" ] && mkdir -p ${SRCdir}
 BLDdir="${SRCdir}/build" 			# build directory
-PREFIX="${INSTALL_ROOT_DIR}/${NAME}/${VERSION}"		# install directory
+if [[ $LABEL != "" ]]; then
+  PREFIX="${INSTALL_ROOT_DIR}/${NAME}/${VERSION}-${LABEL}"		# install directory
+else
+  PREFIX="${INSTALL_ROOT_DIR}/${NAME}/${VERSION}"		# install directory
+fi
 
 # Modules
-MPATH="${SCRIPTPATH}/../modules/${USER}"
+MPATH="${ROOT_DIR}/modules/${USER}"
 [ ! -d "${MPATH}" ] && mkdir -p ${MPATH}
 MPATH="$(readlink -f ${MPATH})"
 
-MFILE="${MPATH}/${NAME}/${VERSION}"
+if [[ $LABEL != "" ]]; then
+  MFILE="${MPATH}/${NAME}/${VERSION}-${LABEL}"
+else
+  MFILE="${MPATH}/${NAME}/${VERSION}"
+fi
+
 [ ! -d "$(dirname ${MFILE})" ] && mkdir -p $(dirname ${MFILE})
 
 export MODULEPATH="${MPATH}:$MODULEPATH"
 
 
 # Others
-THREAD_NUM=16
+THREAD_NUM=8
 
 ## Print paths ##
 

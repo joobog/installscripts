@@ -1,20 +1,28 @@
 #!/bin/bash
 
 export NAME="netcdf"
-export VERSION="4.6.1"
+export VERSION="4.8.0"
 source ./config
 
-fetch_http "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VERSION.tar.gz"
+fetch_http "https://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-c-4.8.0.tar.gz"
 
-#declare -a deps=( "mpich/3.2" "hdf5/1.8.20" )
-declare -a deps=( "hdf5/1.10.5" )
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+
+declare -a deps=( \
+  "openmpi/4.1.0" \
+  "szip/2.1" \
+  "maee/hdf5/1.12.0" \
+)
 
 function build_script {
-	set -x
- cd netcdf-$VERSION
+	#set -x
+ cd netcdf-c-$VERSION
+ module_load "${load[@]}"
  module_load "${deps[@]}"
+ module list
 
- exists h5dump
  CC=$(which mpicc) 
  CXX=$(which mpicxx)
  FF=$(which mpif90)
@@ -23,18 +31,20 @@ function build_script {
  MPIDIR="$(readlink -f $(dirname $(which mpiexec))/..)"
  H5DIR="$(readlink -f $(dirname $(which h5dump))/..)"
  #export LDFLAGS="-L${H5DIR}/lib -Wl,--rpath=${H5DIR}/lib"
- export LDFLAGS="-L${H5DIR}/lib"
+ export LDFLAGS="-L${H5DIR}/lib64"
  export CPPFLAGS="-I${H5DIR}/include -I${MPIDIR}/include"
  export CFLAGS=""
 
-./configure \
- --prefix=${PREFIX} \
- --enable-shared \
- --enable-static || die "Couldn't configure"
+ make clean
+ ./configure \
+   --prefix=${PREFIX} \
+   --enable-shared \
+   --enable-static || die "Couldn't configure"
 
- make -j $THREAD_NUM || die "Couldn't make"
- make install  -j $THREAD_NUM || die "Couldn't install"
- set +x
+
+  make -j $THREAD_NUM || die "Couldn't make"
+  make install  -j $THREAD_NUM || die "Couldn't install"
+  set +x
 }
 
 build_with build_script

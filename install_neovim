@@ -4,19 +4,20 @@ export NAME="neovim"
 export VERSION="git"
 source ./config
 fetch_git "https://github.com/neovim/neovim"
-declare -a deps=( "python/2.7.15" "python/3.8.0" )
-
+declare -a deps=( "python/2.7.17-01" "python3/3.9.0-01" )
+declare -a load=( )
 
 function build_script {
-    make clean
-    set -x
-    CC=$(which gcc) \
-    CXX=$(which g++) \
-    make VERBOSE=1 -j CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX:PATH=$PREFIX -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX" || die "Make failed"
-    set +x
-    make install || die "Install failed"
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
+  make clean
+  set -x
+  CC=$(which gcc) \
+  CXX=$(which g++) \
+  make VERBOSE=1 -j CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX:PATH=$PREFIX -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX" || die "Make failed"
+  set +x
+  make install || die "Install failed"
 }
-
 
 build_with build_script
 

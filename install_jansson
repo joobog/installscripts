@@ -7,9 +7,12 @@ source ./config
 declare -a deps=( "" )
 deps=("")
 
+
 fetch_http "https://digip.org/jansson/releases/jansson-2.13.1.tar.gz"
 
 function build_script {
+  module_load "${load[@]}"
+  module_load "${deps[@]}"
   set -x
 	cd jansson-${VERSION}
 	module_load "${deps[@]}"

@@ -1,15 +1,23 @@
 #!/bin/bash
 
 export NAME="hdf5"
-export VERSION="1.10.5"
+export VERSION="1.12.0"
 source ./config
 
-fetch_http "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-$VERSION/src/hdf5-$VERSION.tar.gz"
+#fetch_http "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-$VERSION/src/hdf5-$VERSION.tar.gz"
+fetch_http "https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_0/source/hdf5-1.12.0.tar.gz"
 
-declare -a deps=( "" )
+declare -a load=( \
+  "cmake/3.19.5" \
+)
+declare -a deps=( \
+  "openmpi/4.1.0" \
+  "szip/2.1" \
+)
 
 function build_script {
  cd hdf5-$VERSION
+ module_load "${load[@]}"
  module_load "${deps[@]}"
 
  set -x
@@ -21,16 +29,18 @@ function build_script {
 	--enable-shared \
 	--enable-static \
 	--enable-parallel \
+  --with-default-api-version=v18 \
+  --with-szlib=${SZIP_DIR} \
     CC="$(which mpicc)" \
     FC="$(which mpif90)" \
     F77="$(which mpi77)" \
-    CXX="$(which mpic++)" || die "Couldn't configure"
+    CXX="$(which mpic++)" || die "configure failed"
 set +x
 
 	#--enable-cxx \
 
- make -j $THREAD_NUM || die "Couldn't make"
- make install  -j $THREAD_NUM || die "Couldn't install"
+ make -j $THREAD_NUM || die "make failed"
+ make install  -j $THREAD_NUM || die "install failed"
 }
 
 build_with build_script
